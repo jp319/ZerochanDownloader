@@ -6,11 +6,8 @@ import jp319.zerochan.utils.gui.ScaledIcon;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
-import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Objects;
-
-import static jp319.zerochan.utils.statics.Constants.ScaledImageIcon;
 
 public class PreviewImageItem extends JLayeredPane {
 	private final PreviewImageData imageData;
@@ -45,10 +42,11 @@ public class PreviewImageItem extends JLayeredPane {
 		// Tool tip for image
 		String toolTipText =
 				"<html>" +
-						"      Tag : " + imageData.getTag() + "<br>" +
+						"  Primary : " + imageData.getTag() + "<br>" +
 						"Dimension : " + "(" + imageData.getWidth() + "x" + imageData.getHeight() + ")<br>" +
 						"   Source : " + (! imageData.getSource().isEmpty() ?
 						"<a href='"+imageData.getSource()+"'> "+imageData.getSource()+" </a>" : "n/a") + "<br>" +
+						"     Tags :" + getFormattedTags() +
 						"</html>";
 		image_lb.setToolTipText(toolTipText);
 
@@ -101,5 +99,21 @@ public class PreviewImageItem extends JLayeredPane {
 	}
 	public List<String> getImageTags() {
 		return this.imageData.getTags();
+	}
+	public String getFormattedTags() {
+		int size = this.imageData.getTags().size();
+		List<String> tags = this.imageData.getTags();
+		StringBuilder formattedTags = new StringBuilder();
+		
+		for (int i = 0; i < size; i++) {
+			if (i > 0 && i % 6 == 0) {
+				formattedTags.append("<br>");
+			} else if (i > 0) {
+				formattedTags.append(", ");
+			}
+			formattedTags.append(tags.get(i));
+		}
+		
+		return formattedTags.toString();
 	}
 }

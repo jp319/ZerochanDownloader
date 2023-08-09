@@ -3,10 +3,10 @@ package jp319.zerochan.controllers;
 import jp319.zerochan.models.FullImageData;
 import jp319.zerochan.models.PreviewImageItem;
 import jp319.zerochan.models.PreviewImagesList;
-import jp319.zerochan.utils.gui.FrameAction;
-import jp319.zerochan.utils.gui.OnlineImageLoader;
+import jp319.zerochan.utils.gui.*;
 import jp319.zerochan.utils.sanitations.CleanSearchResult;
 import jp319.zerochan.utils.sanitations.SanitizeText;
+import jp319.zerochan.utils.statics.CheckURL;
 import jp319.zerochan.utils.statics.Constants;
 import jp319.zerochan.utils.statics.Gson;
 import jp319.zerochan.views.components.Body;
@@ -17,6 +17,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -27,15 +30,17 @@ public class AppController {
 	Footer footer;
 	FullImageData singleImageItem;
 	PreviewImagesList multipleImageItem;
-	public AppController(JFrame mainFrame, Header header, Body body, Footer footer) {
+	DownloadDialog downloadDialog;
+	public AppController(JFrame mainFrame, Header header, Body body, Footer footer, DownloadDialog downloadDialog) {
 		this.mainFrame = mainFrame;
 		this.header = header;
 		this.body = body;
 		this.footer = footer;
+		this.downloadDialog = downloadDialog;
 		
-		setHeader();
+		setListener();
 	}
-	private void setHeader() {
+	private void setListener() {
 		// Search Listener
 		header.getSearch_tf().addKeyListener(new KeyAdapter() {
 			@Override
@@ -115,6 +120,10 @@ public class AppController {
 				showError();
 			}
 		});
+		// Download Button Listener
+		body.getDownloadButton().addActionListener(e ->
+				SwingUtilities.invokeLater(this::downloadMultipleImages)
+		);
 	}
 	// Main Methods
 	private void doSearch(String searchInput) {
@@ -174,6 +183,7 @@ public class AppController {
 		
 		for (int i = 0; i < size; i++) {
 			PreviewImageItem previewImageItem = new PreviewImageItem(multipleImageItem.getItems().get(i));
+			addCheckBoxListener(previewImageItem.getCheckBox());
 			OnlineImageLoader imageLoader = new OnlineImageLoader(footer, body, previewImageItem);
 			
 			service.submit(imageLoader.loadImage());
@@ -189,9 +199,50 @@ public class AppController {
 		});
 		
 	}
+	private void downloadMultipleImages() {
+		downloadDialog.removeAllItems();
+		downloadDialog.setVisible(true);
+		List<DownloadItem> downloadItems = new ArrayList<>();
+		List<String> validURLs = new ArrayList<>();
+		
+		for (String id : body.getSelectedImageIds()) {
+			String draftURL = Constants.STATIC_API_BASE_URL + "/" + id;
+			String validURL = CheckURL.makeURLValid(draftURL);
+			
+			DownloadItem item = new DownloadItem(id);
+			downloadDialog.addDownloadItem(item);
+			
+			downloadItems.add(item);
+			validURLs.add(validURL);
+		}
+		
+		downloadDialog.setTotalDownloadedItems(downloadItems.size());
+		doDownload(downloadItems, validURLs);
+	}
+	private void doDownload(List<DownloadItem> downloadItems, List<String> validURLs) {
+		String baseDestination = Constants.DOWNLOAD_DIRECTORY;
+		int downloadCount = 0;
+		
+		ExecutorService service = Executors.newSingleThreadExecutor();
+		
+		for (DownloadItem downloadItem : downloadItems) {
+			URI uri = URI.create(validURLs.get(downloadCount));
+			String destination = baseDestination + removeBaseURL(validURLs.get(downloadCount));
+			service.submit(new FileDownloader(
+					uri, destination, downloadDialog, downloadItem
+			).downloadImage());
+			
+			downloadCount++;
+		}
+		
+		service.shutdown();
+	}
 	// Helper Methods
 	private String sanitizeText(String input) {
 		return SanitizeText.sanitizeTextForLink(input);
+	}
+	private String removeBaseURL(String fullUrl) {
+		return CheckURL.removeBaseUrl(fullUrl, "https://static.zerochan.net/");
 	}
 	private boolean isSingleItem(String result) {
 		return !result.contains("\"items\":"); // returns true if it doesn't contain the string "items"
@@ -289,5 +340,9 @@ public class AppController {
 	}
 	private void resetOptionalFilters() {
 	
+	}
+	// Additional Listeners
+	private void addCheckBoxListener(JCheckBox checkBox) {
+		checkBox.addActionListener(e -> body.setSelectAllCheckBox());
 	}
 }

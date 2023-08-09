@@ -9,6 +9,7 @@ import java.util.Map;
 public class Constants {
 	// Request Header Constants
 	public static final String API_BASE_URL = Config.properties.getProperty("api.base.url");
+	public static final String STATIC_API_BASE_URL = Config.properties.getProperty("static.api.base.url");
 	public static final String USER_AGENT_HEADER = Config.properties.getProperty("user.agent.header");
 	public static final String ACCEPT_HEADER = Config.properties.getProperty("accept.header");
 	public static final String ACCEPT_LANGUAGE_HEADER = Config.properties.getProperty("accept.language.header");
@@ -79,4 +80,6 @@ public class Constants {
 		Image scaledImage = image.getScaledInstance(scaledWidth, scaledHeight, java.awt.Image.SCALE_SMOOTH);
 		return new ImageIcon(scaledImage);
 	}
+	// Download Constants
+	public static String DOWNLOAD_DIRECTORY = "D:/Downloads/Pictures/";
 }

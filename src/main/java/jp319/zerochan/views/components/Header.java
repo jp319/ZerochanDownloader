@@ -9,7 +9,6 @@ import jp319.zerochan.views.callbacks.FrameListenerInterface;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.io.File;
 import java.io.IOException;
 

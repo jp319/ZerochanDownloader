@@ -1,6 +1,7 @@
 package jp319.zerochan.views.components;
 
 import jp319.zerochan.controllers.AppController;
+import jp319.zerochan.utils.gui.DownloadDialog;
 import jp319.zerochan.views.Listeners.FrameListener;
 import jp319.zerochan.views.callbacks.FrameListenerInterface;
 
@@ -15,6 +16,7 @@ public class Layout extends JFrame {
 	private Footer footer;
 	private FrameListenerInterface frameCallback;
 	private AppController appController;
+	private DownloadDialog downloadDialog;
 	public Layout () {
 		initFrame();
 		initFrameContainer();
@@ -22,6 +24,7 @@ public class Layout extends JFrame {
 		initHeader();
 		initBody();
 		initFooter();
+		initDownloadDialog();
 		
 		initCallbacks();
 		initToolTipManager();
@@ -61,8 +64,11 @@ public class Layout extends JFrame {
 		footer = new Footer();
 		frameContainer.add(footer, BorderLayout.SOUTH);
 	}
+	private void initDownloadDialog() {
+		downloadDialog = new DownloadDialog(this);
+	}
 	private void initController() {
-		appController = new AppController(this, header, body, footer);
+		appController = new AppController(this, header, body, footer, downloadDialog);
 	}
 	// Listeners
 	private void initCallbacks() {

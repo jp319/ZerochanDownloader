@@ -22,8 +22,6 @@ public class Body extends OverlayPanel {
 		getImagesPanel().setLayout(new WrapLayout(FlowLayout.LEFT, 5, 5));
 		getImagesPanel().setBorder(BorderFactory.createEmptyBorder(20,5,10,5));
 		
-		getDownloadButton().putClientProperty("JButton.buttonType", "roundRect");
-		
 		getLoadingPanel().setBorder(BorderFactory.createCompoundBorder(
 				BorderFactory.createEmptyBorder(10, 10, 10, 10), // Outside Margin
 				BorderFactory.createLineBorder(Color.GRAY, 3, true) // LineBorder Inside the Margin
