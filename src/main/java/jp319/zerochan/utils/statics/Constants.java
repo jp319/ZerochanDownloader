@@ -81,5 +81,5 @@ public class Constants {
 		return new ImageIcon(scaledImage);
 	}
 	// Download Constants
-	public static String DOWNLOAD_DIRECTORY = "D:/Downloads/Pictures/";
+	public static String DOWNLOAD_DIRECTORY = "C:/Users/"+System.getProperty("user.name") +"/Downloads/";
 }

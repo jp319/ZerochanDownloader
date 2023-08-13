@@ -116,4 +116,7 @@ public class PreviewImageItem extends JLayeredPane {
 		
 		return formattedTags.toString();
 	}
+	public JLabel getImageLabel() {
+		return image_lb;
+	}
 }

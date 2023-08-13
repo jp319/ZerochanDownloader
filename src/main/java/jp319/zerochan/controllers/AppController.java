@@ -17,6 +17,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -124,6 +126,17 @@ public class AppController {
 		body.getDownloadButton().addActionListener(e ->
 				SwingUtilities.invokeLater(this::downloadMultipleImages)
 		);
+		// Image Listener
+		for (Component component : body.getImagesPanel().getComponents()) {
+			if (component instanceof PreviewImageItem previewImageItem) {
+				previewImageItem.getImageLabel().addMouseListener(new MouseAdapter() {
+					@Override
+					public void mouseClicked(MouseEvent e) {
+						// TODO: Show Image Preview
+					}
+				});
+			}
+		}
 	}
 	// Main Methods
 	private void doSearch(String searchInput) {
