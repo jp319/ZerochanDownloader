@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="mikesamuel.json.sanitizer" type="repository">
+    <properties maven-id="com.mikesamuel:json-sanitizer:1.2.3" />
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/lib/json-sanitizer-1.2.3.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

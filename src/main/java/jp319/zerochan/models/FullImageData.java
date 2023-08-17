@@ -72,4 +72,22 @@ public class FullImageData {
 	public List<String> getTags() {
 		return tags;
 	}
+	public String getFormattedTags() {
+		int size = this.getTags().size();
+		List<String> tags = this.getTags();
+		StringBuilder formattedTags = new StringBuilder();
+		
+		formattedTags.append("<html>");
+		for (int i = 0; i < size; i++) {
+			if (i > 0 && i % 3 == 0) {
+				formattedTags.append("<br>");
+			} else if (i > 0) {
+				formattedTags.append(", ");
+			}
+			formattedTags.append(tags.get(i));
+		}
+		formattedTags.append("</html>");
+		
+		return formattedTags.toString();
+	}
 }

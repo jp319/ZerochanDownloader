@@ -43,7 +43,7 @@ public class FileDownloader {
 					HttpEntity entity = response.getEntity();
 					if (entity != null) {
 						try (InputStream in = entity.getContent();
-						     OutputStream out = new FileOutputStream(destination)) {
+							 OutputStream out = new FileOutputStream(destination)) {
 							
 							byte[] buffer = new byte[4096];
 							int bytesRead;

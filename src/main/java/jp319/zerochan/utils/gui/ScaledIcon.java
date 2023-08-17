@@ -1,11 +1,10 @@
 package jp319.zerochan.utils.gui;
 
-import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageOutputStream;
+import org.imgscalr.Scalr;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 
 public class ScaledIcon {
 	public static Icon createScaledIcon(ImageIcon originalIcon, int maxImageWidth, int maxImageHeight) {
@@ -59,8 +58,19 @@ public class ScaledIcon {
 		
 		if (fileExtension != null && fileExtension.toLowerCase().endsWith(".gif")) {
 			scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_DEFAULT);
+			//scaledImage = originalIcon.getImage();
 		} else {
-			scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+			//scaledImage = originalIcon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+			BufferedImage bi = new BufferedImage(
+					originalIcon.getIconWidth(),
+					originalIcon.getIconHeight(),
+					BufferedImage.TYPE_INT_RGB);
+			Graphics g = bi.createGraphics();
+			// paint the Icon to the BufferedImage.
+			originalIcon.paintIcon(null, g, 0,0);
+			g.dispose();
+			
+			scaledImage = Scalr.resize(bi, targetSize);
 		}
 		return new ImageIcon(scaledImage);
 	}

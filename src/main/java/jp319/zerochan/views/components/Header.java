@@ -271,9 +271,7 @@ public class Header extends MarginPanel implements FrameListenerInterface {
 		}
 	}
 	private static Icon createSearchIcon() {
-		// Replace this URL with the actual URL of your search icon image
-		File image = new File("src/main/resources/images/search.png");
-		ImageIcon imageIcon = new ImageIcon(image.getAbsolutePath());
+		ImageIcon imageIcon = new ImageIcon("src/main/resources/images/search.png");
 		return ScaledIcon.createScaledIcon(imageIcon, 16, 16);
 	}
 	// Getters for Controller

@@ -16,4 +16,8 @@ public class CleanSearchResult {
 			return null;
 		}
 	}
+	public static String sanitizeJson(String jsonString) {
+		// Well Formed JSON
+		return com.google.json.JsonSanitizer.sanitize(jsonString);
+	}
 }

@@ -35,6 +35,7 @@ public class Search {
 		this(null, tags, filters);
 	}
 	private Search(String id, String tags, String filters) {
+		System.out.println("Link: " + Constants.API_BASE_URL);
 		this.id = id != null ? "/" + id : null;
 		this.tags = tags != null ? "/" + tags : null;
 		this.filters = filters;
@@ -124,6 +125,7 @@ public class Search {
 		}
 		try {
 			result = EntityUtils.toString(entity, StandardCharsets.UTF_8);
+			//result = result.replace("\\", "");
 			return result;
 		} catch (IOException e) {
 			e.printStackTrace();

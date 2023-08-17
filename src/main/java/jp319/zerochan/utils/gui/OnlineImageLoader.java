@@ -33,7 +33,7 @@ public class OnlineImageLoader {
 		return () ->{
 			try {
 				// This code is tested with gif, and it animates the gifs just fine.
-				// URI uri = URI.create("https://static.zerochan.net/Kuro.Usagi.%28Mondai-ji-tachi%29.full.3985360.gif");
+				// URI uri = URI.create("https://static.zerochan.net/Cookie.Run.full.3453716.gif");
 				
 				URI uri = URI.create(previewImageItem.getThumbnail());
 				ImageInputStream imageInputStream = ImageIO.createImageInputStream(uri.toURL().openStream());
@@ -56,7 +56,7 @@ public class OnlineImageLoader {
 					
 					if (previewImageItem.isDisplayable()) {
 						SwingUtilities.invokeLater(() -> {
-							body.getLoadingPanel().setVisible(false); // Hide loading panel when done searching
+							body.getLoadingPanel().setVisible(false); // Hide the loading panel when done searching
 							// Create a Timer to loop through the frames and update the image on the JLabel
 							final int[] frameIndex = {0};
 							Timer timer = new Timer(100, e -> {

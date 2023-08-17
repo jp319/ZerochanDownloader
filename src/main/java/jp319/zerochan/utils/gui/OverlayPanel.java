@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OverlayPanel extends JPanel {
+	private final List<String> allImageIds = new ArrayList<>();
 	private final List<String> selectedImageIds = new ArrayList<>();
 	private final JPanel buttons_pnl;
 	private final JButton download_btn = new JButton("Download");
@@ -77,6 +78,14 @@ public class OverlayPanel extends JPanel {
 	}
 	public List<String> getSelectedImageIds() {
 		return selectedImageIds;
+	}
+	public List<String> getAllImageIds() {
+		for (Component component : images_pnl.getComponents()) {
+			if (component instanceof PreviewImageItem previewImageItem) {
+				allImageIds.add(previewImageItem.getImageId());
+			}
+		}
+		return allImageIds;
 	}
 	public void addImage(PreviewImageItem previewImageItem) {
 		setImageItemCheckBoxListener(previewImageItem);

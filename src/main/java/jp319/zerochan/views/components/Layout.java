@@ -2,6 +2,8 @@ package jp319.zerochan.views.components;
 
 import jp319.zerochan.controllers.AppController;
 import jp319.zerochan.utils.gui.DownloadDialog;
+import jp319.zerochan.utils.gui.MenuBar;
+import jp319.zerochan.utils.gui.SettingsDialog;
 import jp319.zerochan.views.Listeners.FrameListener;
 import jp319.zerochan.views.callbacks.FrameListenerInterface;
 
@@ -14,9 +16,11 @@ public class Layout extends JFrame {
 	private Header header;
 	private Body body;
 	private Footer footer;
-	private FrameListenerInterface frameCallback;
-	private AppController appController;
+	FrameListenerInterface frameCallback;
+	AppController appController;
 	private DownloadDialog downloadDialog;
+	private MenuBar menuBar;
+	private SettingsDialog settingsDialog;
 	public Layout () {
 		initFrame();
 		initFrameContainer();
@@ -25,6 +29,8 @@ public class Layout extends JFrame {
 		initBody();
 		initFooter();
 		initDownloadDialog();
+		initMenuBar();
+		initSettingsDialog();
 		
 		initCallbacks();
 		initToolTipManager();
@@ -40,6 +46,7 @@ public class Layout extends JFrame {
 		int preferredFrameHeight = 600;
 		setPreferredSize(new Dimension(preferredFrameWidth, preferredFrameHeight));
 		setMinimumSize(new Dimension(preferredFrameWidth, preferredFrameHeight));
+		setIconImage(Toolkit.getDefaultToolkit().getImage("src/main/resources/images/icon256x256.png"));
 	}
 	private void initFrameContainer() {
 		frameContainer = getContentPane();
@@ -64,11 +71,18 @@ public class Layout extends JFrame {
 		footer = new Footer();
 		frameContainer.add(footer, BorderLayout.SOUTH);
 	}
+	private void initMenuBar() {
+		menuBar = new MenuBar();
+		setJMenuBar(menuBar);
+	}
 	private void initDownloadDialog() {
 		downloadDialog = new DownloadDialog(this);
 	}
+	private void initSettingsDialog() {
+		settingsDialog = new SettingsDialog(this);
+	}
 	private void initController() {
-		appController = new AppController(this, header, body, footer, downloadDialog);
+		appController = new AppController(this, header, body, footer, downloadDialog, menuBar, settingsDialog);
 	}
 	// Listeners
 	private void initCallbacks() {

@@ -3,6 +3,7 @@ package jp319.zerochan.controllers;
 import jp319.zerochan.models.FullImageData;
 import jp319.zerochan.models.PreviewImageItem;
 import jp319.zerochan.models.PreviewImagesList;
+import jp319.zerochan.utils.gui.MenuBar;
 import jp319.zerochan.utils.gui.*;
 import jp319.zerochan.utils.sanitations.CleanSearchResult;
 import jp319.zerochan.utils.sanitations.SanitizeText;
@@ -20,6 +21,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -33,14 +37,30 @@ public class AppController {
 	FullImageData singleImageItem;
 	PreviewImagesList multipleImageItem;
 	DownloadDialog downloadDialog;
-	public AppController(JFrame mainFrame, Header header, Body body, Footer footer, DownloadDialog downloadDialog) {
+	MenuBar menuBar;
+	SettingsDialog settingsDialog;
+	FullImageFrame fullImageFrame;
+	// Full Image View Variables
+	List<String> imageIds;
+	String previousImageId;
+	String currentImageId;
+	String nextImageId;
+	boolean initializedPrevAndNextButtonListener = false; //Next and Prev button listeners should ony be initialized once.
+	public AppController(JFrame mainFrame, Header header, Body body, Footer footer, DownloadDialog downloadDialog, MenuBar menuBar, SettingsDialog settingsDialog) {
 		this.mainFrame = mainFrame;
 		this.header = header;
 		this.body = body;
 		this.footer = footer;
 		this.downloadDialog = downloadDialog;
+		this.menuBar = menuBar;
+		this.settingsDialog = settingsDialog;
 		
 		setListener();
+		setups();
+	}
+	private void setups() {
+		settingsDialog.getDownloadDirectoryTF().setText(Constants.getDownloadDirectory());
+		fullImageFrame = new FullImageFrame();
 	}
 	private void setListener() {
 		// Search Listener
@@ -122,34 +142,56 @@ public class AppController {
 				showError();
 			}
 		});
+		
 		// Download Button Listener
 		body.getDownloadButton().addActionListener(e ->
 				SwingUtilities.invokeLater(this::downloadMultipleImages)
 		);
-		// Image Listener
-		for (Component component : body.getImagesPanel().getComponents()) {
-			if (component instanceof PreviewImageItem previewImageItem) {
-				previewImageItem.getImageLabel().addMouseListener(new MouseAdapter() {
-					@Override
-					public void mouseClicked(MouseEvent e) {
-						// TODO: Show Image Preview
-					}
-				});
+		
+		// Menu Bar Listener
+		menuBar.getSettingsItem().addActionListener(e -> settingsDialog.setVisible(true));
+		menuBar.getOpenDownloadDirectoryItem().addActionListener(e -> {
+			String downloadDirectory = Constants.getDownloadDirectory();
+			checkDirectory(downloadDirectory);
+			Constants.openFolder(downloadDirectory);
+		});
+		menuBar.getShowDownloadItem().addActionListener(e -> downloadDialog.setVisible(true));
+		menuBar.getExitItem().addActionListener(e -> System.exit(0));
+		
+		// Settings Dialog Listener
+		settingsDialog.getSaveSettingsButton().addActionListener(e -> {
+			String directory = settingsDialog.getDownloadDirectory();
+			if (!settingsDialog.getDownloadDirectory().isEmpty()) {
+				Constants.updateDownloadDirectory(directory);
 			}
-		}
+			settingsDialog.setVisible(false);
+		});
+		// Full Image View
+		// In the viewFullImage method
 	}
 	// Main Methods
 	private void doSearch(String searchInput) {
 		String stringToSearch = sanitizeText(searchInput);
 		String filters = getFilters();
 		
-		body.showLoading(); // Show loading panel when searching
+		body.showLoading(); // Show a loading panel when searching
 		String searchResult = CleanSearchResult.clean(new Search(stringToSearch, filters).getResult());
+		
+		if (searchResult != null) {
+			if (searchResult.replaceAll("\\s+", "").equals("{}")) {
+				showError();
+				return;
+			}
+		}
 		
 		if (searchResult != null && !searchResult.isEmpty()) {
 			boolean isSingleItem = isSingleItem(searchResult);
+			searchResult = CleanSearchResult.sanitizeJson(searchResult);
 			if (isSingleItem) {
 				singleImageItem = Gson.gson.fromJson(searchResult, FullImageData.class);
+				currentImageId = searchInput;
+				setPreviousAndNextImageId();
+				viewFullImage(singleImageItem);
 			} else {
 				multipleImageItem = Gson.gson.fromJson(searchResult, PreviewImagesList.class);
 				loadMultipleImages(multipleImageItem);
@@ -158,13 +200,46 @@ public class AppController {
 			body.hideLoading();
 		}
 		
-		if (searchResult != null) {
-			if (searchResult.replaceAll("\\s+", "").equals("{}")) {
-				showError();
-			}
+		setPrevPageButton();
+	}
+	private void viewFullImage(FullImageData singleImageItem) {
+		fullImageFrame.setFullImageData(singleImageItem);
+		fullImageFrame.showImageFrame();
+		
+		if (!initializedPrevAndNextButtonListener) {
+			fullImageFrame.getFullImageView().getImagePropertiesButton().addActionListener(e ->
+					fullImageFrame.getDetailsDialog().setVisible(true)
+			);
+			fullImageFrame.getFullImageView().getPrevPageButton().addActionListener(e -> {
+				fullImageFrame.getFullImageView().getPrevPageButton().setEnabled(false);
+				String prevImageId = goToPreviousImageId();
+				if (prevImageId != null && !prevImageId.isEmpty()) {
+					try {
+						doSearch(prevImageId);
+					} catch (Exception ex) {
+						ex.printStackTrace();
+					} finally {
+						fullImageFrame.getFullImageView().getPrevPageButton().setEnabled(true);
+					}
+				}
+			});
+			
+			fullImageFrame.getFullImageView().getNextPageButton().addActionListener(e -> {
+				fullImageFrame.getFullImageView().getNextPageButton().setEnabled(false);
+				String nextImageId = goToNextImageId();
+				if (nextImageId != null && !nextImageId.isEmpty()) {
+					try {
+						doSearch(nextImageId);
+					} catch (Exception ex) {
+						ex.printStackTrace();
+					} finally {
+						fullImageFrame.getFullImageView().getNextPageButton().setEnabled(true);
+					}
+				}
+			});
+			initializedPrevAndNextButtonListener = true;
 		}
 		
-		setPrevPageButton();
 	}
 	private void showError() {
 		FrameAction.shakeFrame(mainFrame);
@@ -209,6 +284,8 @@ public class AppController {
 			
 			footer.revalidate();
 			footer.repaint();
+			
+			addPreviewImageItemListener();
 		});
 		
 	}
@@ -233,14 +310,19 @@ public class AppController {
 		doDownload(downloadItems, validURLs);
 	}
 	private void doDownload(List<DownloadItem> downloadItems, List<String> validURLs) {
-		String baseDestination = Constants.DOWNLOAD_DIRECTORY;
+		String baseDestination = Constants.getDownloadDirectory();
 		int downloadCount = 0;
+		
+		checkDirectory(baseDestination); // Check if a directory exists and create it if it doesn't.
 		
 		ExecutorService service = Executors.newSingleThreadExecutor();
 		
 		for (DownloadItem downloadItem : downloadItems) {
 			URI uri = URI.create(validURLs.get(downloadCount));
 			String destination = baseDestination + removeBaseURL(validURLs.get(downloadCount));
+			
+			System.out.println("Downloading: " + destination);
+			
 			service.submit(new FileDownloader(
 					uri, destination, downloadDialog, downloadItem
 			).downloadImage());
@@ -298,7 +380,7 @@ public class AppController {
 		Constants.resetPage();
 	}
 	private void setPrevPageButton() {
-		// If current page number is 1 then prev page button is disabled else enabled
+		// If the current page number is 1 then prev page button is disabled else enabled
 		header.getPrevPage_btn().setEnabled(Constants.getPageNumber() != 1);
 	}
 	private String getDimensionFilter() {
@@ -318,6 +400,21 @@ public class AppController {
 			}
 		}
 		return "";
+	}
+	private void checkDirectory(String directoryPath) {
+		Path directory = Paths.get(directoryPath);
+		
+		if (Files.exists(directory)) {
+			System.out.println("Directory already exists: " + directory);
+		} else {
+			try {
+				Files.createDirectories(directory);
+				System.out.println("Directory created: " + directory);
+			} catch (Exception e) {
+				System.err.println("Failed to create directory: " + directory);
+				e.printStackTrace();
+			}
+		}
 	}
 	// Filter Helper Methods
 	private String selectedDimension(String selectedDimension) {
@@ -354,8 +451,55 @@ public class AppController {
 	private void resetOptionalFilters() {
 	
 	}
+	
+	// Full Image View methods
+	private void setPreviousAndNextImageId() {
+		int currentIndex = imageIds.indexOf(currentImageId);
+		
+		if (currentIndex == -1) {
+			throw new IllegalArgumentException("currentId not found in the list");
+		}
+		
+		int previousIndex = (currentIndex - 1 + imageIds.size()) % imageIds.size();
+		int nextIndex     = (currentIndex + 1) % imageIds.size();
+		
+		previousImageId   = imageIds.get(previousIndex);
+		nextImageId       = imageIds.get(nextIndex);
+	}
+	private String goToNextImageId() {
+		if (nextImageId == null || nextImageId.isEmpty()) {
+			return "";
+		} else {
+			return nextImageId;
+		}
+	}
+	private String goToPreviousImageId() {
+		if (previousImageId == null || previousImageId.isEmpty()) {
+			return "";
+		} else {
+			return previousImageId;
+		}
+	}
+	
 	// Additional Listeners
 	private void addCheckBoxListener(JCheckBox checkBox) {
 		checkBox.addActionListener(e -> body.setSelectAllCheckBox());
+	}
+	private void addPreviewImageItemListener() {
+		Component[] components = body.getImagesPanel().getComponents();
+		imageIds = body.getAllImageIds();
+		for (Component component : components) {
+			if (component instanceof PreviewImageItem previewImageItem) {
+				previewImageItem.getImageLabel().addMouseListener(new MouseAdapter() {
+					@Override
+					public void mouseClicked(MouseEvent e) {
+						System.out.println("View image: " + previewImageItem.getImageId());
+						currentImageId = previewImageItem.getImageId();
+						doSearch(previewImageItem.getImageId());
+						setPreviousAndNextImageId();
+					}
+				});
+			}
+		}
 	}
 }

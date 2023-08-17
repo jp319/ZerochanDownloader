@@ -3,6 +3,8 @@ package jp319.zerochan.utils.statics;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -81,5 +83,32 @@ public class Constants {
 		return new ImageIcon(scaledImage);
 	}
 	// Download Constants
-	public static String DOWNLOAD_DIRECTORY = "C:/Users/"+System.getProperty("user.name") +"/Downloads/";
+	public static String DOWNLOAD_DIRECTORY = "";
+	public static String getDownloadDirectory() {
+		if (Config.properties.getProperty("new.download.directory").isEmpty()) {
+			DOWNLOAD_DIRECTORY = System.getProperty("user.home") + Config.properties.getProperty("default.download.directory");
+			DOWNLOAD_DIRECTORY = DOWNLOAD_DIRECTORY.replace("\\", "/");
+		} else {
+			DOWNLOAD_DIRECTORY = Config.properties.getProperty("new.download.directory");
+		}
+		return DOWNLOAD_DIRECTORY;
+	}
+	public static void updateDownloadDirectory(String directory) {
+		Config.updatePropertyV2("new.download.directory", directory);
+	}
+	// Folder Constants
+	public static void openFolder(String directory) {
+		try {
+			Desktop desktop = Desktop.getDesktop();
+			File folder = new File(directory);
+			
+			if (Desktop.isDesktopSupported()) {
+				desktop.open(folder);
+			} else {
+				System.out.println("Desktop operations not supported on this platform.");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }
