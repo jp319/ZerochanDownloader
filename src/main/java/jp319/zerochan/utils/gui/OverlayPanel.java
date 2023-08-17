@@ -8,6 +8,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class OverlayPanel extends JPanel {
 	private final List<String> allImageIds = new ArrayList<>();
@@ -96,30 +97,50 @@ public class OverlayPanel extends JPanel {
 		SwingUtilities.invokeLater(() -> {
 			loading_pnl.removeAll();
 			
-			ImageIcon loadingGif = new ImageIcon("src/main/resources/images/loading.gif");
+			ImageIcon loadingGif = new ImageIcon(Objects.requireNonNull(getClass().getResource("/images/loading.gif")));
 			
 			String labelText = "Searching...";
 			setLabelHtmlText(loadingGif, labelText);
 		});
 	}
 	private void setLabelHtmlText(ImageIcon loadingGif, String labelText) {
-		String htmlText =
-				"<html><div style='text-align:center;'> " +
-						"<img src=\"file:" + loadingGif.getDescription() + "\" width=100 height=100>" +
-						"<br>" + labelText + "</div></html>";
+		JPanel loading_pnl = new JPanel(new GridBagLayout());
 		
-		JLabel label = new JLabel(htmlText, SwingConstants.CENTER);
+//		String htmlText =
+//				"<html><div style='text-align:center;'> " +
+//						"<img src=\"file:" + loadingGif.getDescription() + "\" width=100 height=100>" +
+//						"<br>" + labelText + "</div></html>";
+//
+//		JLabel label = new JLabel(htmlText, SwingConstants.CENTER);
 		
-		loading_pnl.add(label, BorderLayout.CENTER);
-		loading_pnl.setVisible(true);
-		loading_pnl.revalidate();
-		loading_pnl.repaint();
+		JLabel loading_lb = new JLabel(loadingGif, SwingConstants.CENTER);
+		JLabel loading_txt = new JLabel(labelText, SwingConstants.CENTER);
+		
+		loading_pnl.add(loading_lb, new GridBagConstraints(
+				0,0,1,1,1.0,0.0,
+				GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL,
+				new Insets(0,0,0,0),
+				0,0
+		));
+		loading_pnl.add(loading_txt, new GridBagConstraints(
+				0,1,1,1,1.0,0.0,
+				GridBagConstraints.CENTER,
+				GridBagConstraints.HORIZONTAL,
+				new Insets(0,0,0,0),
+				0,0
+		));
+		
+		this.loading_pnl.add(loading_pnl, BorderLayout.CENTER);
+		this.loading_pnl.setVisible(true);
+		this.loading_pnl.revalidate();
+		this.loading_pnl.repaint();
 	}
 	public void showError() {
 		SwingUtilities.invokeLater(() -> {
 			loading_pnl.removeAll();
 			
-			ImageIcon noResultGif = new ImageIcon("src/main/resources/images/no-result.gif");
+			ImageIcon noResultGif = new ImageIcon(Objects.requireNonNull(getClass().getResource("/images/no-result.gif")));
 			
 			String labelText = "No Results Found";
 			setLabelHtmlText(noResultGif, labelText);
@@ -136,7 +157,7 @@ public class OverlayPanel extends JPanel {
 			}
 		}
 		// If selectedImageCount == totalImageCount then
-		// that would mean all images are selected
+		// that would mean all images are selected,
 		// so select all is checked.
 		selectAll_chk
 				.setSelected(selectedImageCount == totalImageCount);
@@ -212,8 +233,8 @@ public class OverlayPanel extends JPanel {
 			boolean selected = selectAll_chk.isSelected();
 			for (Component component : images_pnl.getComponents()) {
 				if (component instanceof PreviewImageItem previewImageItem) {
-					// On click if select all checkbox is checked/unchecked
-					// change all items to checked/unchecked
+					// On click if select all checkboxes are checked/unchecked
+					// change all items to check/unchecked
 					previewImageItem.getCheckBox().setSelected(selected);
 				}
 			}
