@@ -2,8 +2,11 @@ package jp319.zerochan.utils.gui;
 
 import jp319.zerochan.models.FullImageData;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class FullImageFrame extends JFrame {
 	FullImageData fullImageData;
@@ -13,8 +16,18 @@ public class FullImageFrame extends JFrame {
 		setDefaultCloseOperation(HIDE_ON_CLOSE);
 		setLayout(new BorderLayout());
 		setMinimumSize(new Dimension(500,500));
-		setIconImage(Toolkit.getDefaultToolkit().getImage("src/main/resources/images/icon256x256.png"));
+		InputStream frameIconImage = FullImageFrame.class.getResourceAsStream("/images/icon256x256.png");
+		Image image = null;
+		try {
+			if (frameIconImage != null) {
+				image = ImageIO.read(frameIconImage);
+			}
+		}
+		catch (IOException e) { throw new RuntimeException(e); }
+		setIconImage(image);
+		
 		fullImageView = new FullImageView();
+		
 		pack();
 		setExtendedState(JFrame.MAXIMIZED_BOTH);
 		setVisible(false);

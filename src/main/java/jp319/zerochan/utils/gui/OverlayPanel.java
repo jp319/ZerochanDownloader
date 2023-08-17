@@ -4,8 +4,11 @@ import com.formdev.flatlaf.ui.FlatLineBorder;
 import jp319.zerochan.models.PreviewImageItem;
 import jp319.zerochan.utils.sanitations.SanitizeText;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -96,10 +99,20 @@ public class OverlayPanel extends JPanel {
 		SwingUtilities.invokeLater(() -> {
 			loading_pnl.removeAll();
 			
-			ImageIcon loadingGif = new ImageIcon("src/main/resources/images/loading.gif");
+			InputStream loadingGifFile = OverlayPanel.class.getResourceAsStream("/images/loading.gif");
+			
+			ImageIcon loadingGif = null;
+			try {
+				if (loadingGifFile != null) {
+					loadingGif = new ImageIcon(ImageIO.read(loadingGifFile));
+				}
+			}
+			catch (IOException e) { throw new RuntimeException(e); }
 			
 			String labelText = "Searching...";
-			setLabelHtmlText(loadingGif, labelText);
+			if (loadingGif != null) {
+				setLabelHtmlText(loadingGif, labelText);
+			}
 		});
 	}
 	private void setLabelHtmlText(ImageIcon loadingGif, String labelText) {
@@ -119,10 +132,21 @@ public class OverlayPanel extends JPanel {
 		SwingUtilities.invokeLater(() -> {
 			loading_pnl.removeAll();
 			
-			ImageIcon noResultGif = new ImageIcon("src/main/resources/images/no-result.gif");
+			InputStream noResultGifFile = OverlayPanel.class.getResourceAsStream("/images/no-result.gif");
+			
+			ImageIcon noResultGif = null;
+			try {
+				if (noResultGifFile != null) {
+					noResultGif = new ImageIcon(ImageIO.read(noResultGifFile));
+				}
+			}
+			catch (IOException e) { throw new RuntimeException(e); }
+			
 			
 			String labelText = "No Results Found";
-			setLabelHtmlText(noResultGif, labelText);
+			if (noResultGif != null) {
+				setLabelHtmlText(noResultGif, labelText);
+			}
 		});
 	}
 	public void setSelectAllCheckBox() {
@@ -136,7 +160,7 @@ public class OverlayPanel extends JPanel {
 			}
 		}
 		// If selectedImageCount == totalImageCount then
-		// that would mean all images are selected
+		// that would mean all images are selected,
 		// so select all is checked.
 		selectAll_chk
 				.setSelected(selectedImageCount == totalImageCount);
@@ -212,8 +236,8 @@ public class OverlayPanel extends JPanel {
 			boolean selected = selectAll_chk.isSelected();
 			for (Component component : images_pnl.getComponents()) {
 				if (component instanceof PreviewImageItem previewImageItem) {
-					// On click if select all checkbox is checked/unchecked
-					// change all items to checked/unchecked
+					// On click if select all checkboxes are checked/unchecked
+					// change all items to check/unchecked
 					previewImageItem.getCheckBox().setSelected(selected);
 				}
 			}

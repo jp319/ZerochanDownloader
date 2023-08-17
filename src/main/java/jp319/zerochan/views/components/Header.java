@@ -1,16 +1,15 @@
 package jp319.zerochan.views.components;
 
-import jp319.zerochan.utils.gui.HyperLinkToolTip;
-import jp319.zerochan.utils.gui.MarginPanel;
-import jp319.zerochan.utils.gui.ScaledIcon;
-import jp319.zerochan.utils.gui.WrapLayout;
+import jp319.zerochan.utils.gui.*;
+import jp319.zerochan.utils.statics.Config;
 import jp319.zerochan.views.callbacks.FrameListenerInterface;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 public class Header extends MarginPanel implements FrameListenerInterface {
 	private final JLabel header_lb = new JLabel("ZeroArtFetcher");
@@ -66,11 +65,14 @@ public class Header extends MarginPanel implements FrameListenerInterface {
 		header_lb.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 		try {
 			// Load the font file from the "fonts" folder
-			File fontFile = new File("src/main/resources/fonts/Quicksand.otf");
-			Font customFont = Font.createFont(Font.TRUETYPE_FONT, fontFile);
+			InputStream fontFile = Config.class.getResourceAsStream("/fonts/Quicksand.otf");
+			Font customFont = null;
+			if (fontFile != null) {
+				customFont = Font.createFont(Font.TRUETYPE_FONT, fontFile);
+			}
 			
 			// Derive the desired font size and style
-			Font customFontSized = customFont.deriveFont(Font.BOLD, 20);
+			Font customFontSized = customFont != null ? customFont.deriveFont(Font.BOLD, 20) : null;
 			header_lb.setFont(customFontSized);
 		} catch (FontFormatException | IOException e) {
 			System.out.println("Error on loading Fonts");
@@ -238,7 +240,7 @@ public class Header extends MarginPanel implements FrameListenerInterface {
 			}
 			
 			// Calculate the preferred width and height based on the preferred sizes of the buttons
-			// Also puts padding through empty border
+			// Also puts padding through an empty border
 			filterPopup_pop.setLayout(new WrapLayout(FlowLayout.LEFT));
 			filterPopup_pop.setBorder(BorderFactory.createEmptyBorder(
 					1,1,1,1
@@ -271,7 +273,16 @@ public class Header extends MarginPanel implements FrameListenerInterface {
 		}
 	}
 	private static Icon createSearchIcon() {
-		ImageIcon imageIcon = new ImageIcon("src/main/resources/images/search.png");
+		InputStream searchImageFile = OverlayPanel.class.getResourceAsStream("/images/search.png");
+		
+		ImageIcon imageIcon = null;
+		try {
+			if (searchImageFile != null) {
+				imageIcon = new ImageIcon(ImageIO.read(searchImageFile));
+			}
+		}
+		catch (IOException e) { throw new RuntimeException(e); }
+		
 		return ScaledIcon.createScaledIcon(imageIcon, 16, 16);
 	}
 	// Getters for Controller

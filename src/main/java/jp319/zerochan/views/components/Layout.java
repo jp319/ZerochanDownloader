@@ -2,14 +2,18 @@ package jp319.zerochan.views.components;
 
 import jp319.zerochan.controllers.AppController;
 import jp319.zerochan.utils.gui.DownloadDialog;
+import jp319.zerochan.utils.gui.FullImageFrame;
 import jp319.zerochan.utils.gui.MenuBar;
 import jp319.zerochan.utils.gui.SettingsDialog;
 import jp319.zerochan.views.Listeners.FrameListener;
 import jp319.zerochan.views.callbacks.FrameListenerInterface;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentListener;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class Layout extends JFrame {
 	private Container frameContainer;
@@ -46,7 +50,15 @@ public class Layout extends JFrame {
 		int preferredFrameHeight = 600;
 		setPreferredSize(new Dimension(preferredFrameWidth, preferredFrameHeight));
 		setMinimumSize(new Dimension(preferredFrameWidth, preferredFrameHeight));
-		setIconImage(Toolkit.getDefaultToolkit().getImage("src/main/resources/images/icon256x256.png"));
+		InputStream frameIconImage = FullImageFrame.class.getResourceAsStream("/images/icon256x256.png");
+		Image image = null;
+		try {
+			if (frameIconImage != null) {
+				image = ImageIO.read(frameIconImage);
+			}
+		}
+		catch (IOException e) { throw new RuntimeException(e); }
+		setIconImage(image);
 	}
 	private void initFrameContainer() {
 		frameContainer = getContentPane();
