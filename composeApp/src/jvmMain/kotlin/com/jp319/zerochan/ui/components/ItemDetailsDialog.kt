@@ -1,0 +1,109 @@
+package com.jp319.zerochan.ui.components
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.jp319.zerochan.data.model.ZerochanFullItem
+import compose.icons.TablerIcons
+import compose.icons.tablericons.*
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun ItemDetailsDialog(
+    details: ZerochanFullItem?,
+    isLoading: Boolean,
+    onDismiss: () -> Unit,
+    onDownload: () -> Unit // 👈 New Parameter
+) {
+    if (details == null && !isLoading) return
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(TablerIcons.InfoCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.width(8.dp))
+                Text("Image Details")
+            }
+        },
+        text = {
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxWidth().height(200.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (details != null) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    item {
+                        // Meta Info Grid
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                DetailRow(TablerIcons.Maximize, "Resolution", "${details.width} x ${details.height}")
+
+                                // Convert bytes to MB
+                                val sizeInMb = details.size?.div((1024f * 1024f))
+                                DetailRow(TablerIcons.Database, "File Size", "%.2f MB".format(sizeInMb))
+
+                                if (!details.source.isNullOrBlank()) {
+                                    DetailRow(TablerIcons.Link, "Source", details.source)
+                                }
+                            }
+                        }
+                    }
+
+                    item {
+                        Text("Tags", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        // Tag Cloud
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            details.tags.forEach { tag ->
+                                SuggestionChip(
+                                    onClick = { /* Could trigger a search in the future! */ },
+                                    label = { Text(tag) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // 👇 Add the explicit URL Download Button
+                if (details != null) {
+                    Button(onClick = onDownload) {
+                        Icon(TablerIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Download Original")
+                    }
+                }
+                TextButton(onClick = onDismiss) { Text("Close") }
+            }
+        }
+    )
+}
+
+@Composable
+private fun DetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(8.dp))
+        Text(text = "$label: ", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(text = value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
+    }
+}
