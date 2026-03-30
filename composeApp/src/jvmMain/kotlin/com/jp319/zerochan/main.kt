@@ -51,20 +51,55 @@ fun main() {
             .build()
     }
 
-    // Load via AWT — works across KDE, XFCE, and GNOME
-    val icon =
-        Thread.currentThread()
-            .contextClassLoader
-            .getResourceAsStream("drawable/logo.png")
-            ?.let { ImageIO.read(it) }
+    // Load via AWT — works across KDE, XFCE, GNOME, and Hyprland/Wayland
+    val iconStream = Thread.currentThread()
+        .contextClassLoader
+        .getResourceAsStream("composeResources/zerochan.composeapp.generated.resources/drawable/logo.png")
+    val icon = iconStream?.let { ImageIO.read(it) }
+
+    // Set the icon in the AWT Toolkit for Wayland/XWayland compositors (e.g. Hyprland)
+    // This is the only reliable way to set the taskbar icon on some compositors
+    if (icon != null) {
+        try {
+            val toolkit = java.awt.Toolkit.getDefaultToolkit()
+            val iconImages = listOf(icon)
+            // Reflect into sun.awt to set the default icon images used by all windows
+            val awtAppClass = Class.forName("sun.awt.AppContext")
+            val getAppContext = awtAppClass.getMethod("getAppContext")
+            val appContext = getAppContext.invoke(null)
+            val setMethod = awtAppClass.getMethod("put", Any::class.java, Any::class.java)
+            setMethod.invoke(appContext, "window.icons", iconImages)
+        } catch (_: Exception) {
+            // Reflection not available — fall through to per-window icon below
+        }
+    }
 
     application {
+        val windowState = androidx.compose.ui.window.rememberWindowState()
         Window(
             onCloseRequest = ::exitApplication,
             title = "Zerochan Downloader",
+            state = windowState,
+            undecorated = true,
+            transparent = true,
         ) {
-            window.iconImage = icon
-            App()
+            // Set icon on the concrete AWT window
+            if (icon != null) {
+                window.iconImage = icon
+                window.iconImages = listOf(icon)
+            }
+            App(
+                windowScope = this,
+                onMinimize = { windowState.isMinimized = true },
+                onMaximizeToggle = {
+                    if (windowState.placement == androidx.compose.ui.window.WindowPlacement.Maximized) {
+                        windowState.placement = androidx.compose.ui.window.WindowPlacement.Floating
+                    } else {
+                        windowState.placement = androidx.compose.ui.window.WindowPlacement.Maximized
+                    }
+                },
+                onClose = ::exitApplication
+            )
         }
     }
 }

@@ -22,6 +22,9 @@ fun TopBar(
     onHelpClick: () -> Unit,
     isSelectionModeActive: Boolean,
     onToggleSelectionMode: () -> Unit,
+    onMinimize: () -> Unit,
+    onMaximizeToggle: () -> Unit,
+    onClose: () -> Unit,
 ) {
     val counterColor =
         when {
@@ -127,6 +130,25 @@ fun TopBar(
                         Icon(TablerIcons.InfoCircle, contentDescription = "Help & Guide", tint = MaterialTheme.colorScheme.primary)
                     }
                 }
+            }
+
+            // WINDOW CONTROLS (Always Visible in Borderless Mode)
+            Spacer(Modifier.width(8.dp))
+            VerticalDivider(modifier = Modifier.height(24.dp), thickness = 1.dp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            Spacer(Modifier.width(8.dp))
+
+            IconButton(onClick = onMinimize, modifier = Modifier.size(32.dp)) {
+                Icon(TablerIcons.Minus, contentDescription = "Minimize", modifier = Modifier.size(16.dp))
+            }
+            IconButton(onClick = onMaximizeToggle, modifier = Modifier.size(32.dp)) {
+                Icon(TablerIcons.Square, contentDescription = "Maximize", modifier = Modifier.size(14.dp))
+            }
+            IconButton(
+                onClick = onClose,
+                modifier = Modifier.size(32.dp),
+                colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
+            ) {
+                Icon(TablerIcons.X, contentDescription = "Close", modifier = Modifier.size(16.dp))
             }
         }
     }

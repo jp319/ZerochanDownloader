@@ -53,8 +53,29 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe, TargetFormat.Rpm)
-            packageName = "com.jp319.zerochan"
-            packageVersion = "1.0.0"
+            packageName = "Zerochan Downloader"
+            packageVersion = "1.0.1"
+            vendor = "John Fritz P. Antipuesto"
+            description = "A beautiful desktop client for Zerochan."
+            copyright = "© 2024 John Fritz P. Antipuesto"
+
+            windows {
+                shortcut = true
+                menuGroup = "Zerochan Downloader"
+                iconFile.set(project.file("src/jvmMain/resources/app_icon.ico"))
+            }
+
+            linux {
+                shortcut = true
+                iconFile.set(project.file("src/commonMain/composeResources/drawable/logo.png"))
+                debMaintainer = "John Fritz P. Antipuesto <johnfritzantipuesto2020@gmail.com>"
+                menuGroup = "Zerochan Downloader"
+            }
+
+            macOS {
+                bundleID = "com.jp319.zerochan"
+                iconFile.set(project.file("src/jvmMain/resources/app_icon.icns"))
+            }
         }
     }
 }

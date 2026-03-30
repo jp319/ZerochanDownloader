@@ -33,9 +33,17 @@ import zerochan.composeapp.generated.resources.Res
 import zerochan.composeapp.generated.resources.logo
 import kotlin.time.Duration.Companion.milliseconds
 
+import androidx.compose.ui.window.WindowScope
+import androidx.compose.foundation.window.WindowDraggableArea
+
 @Composable
 @Preview
-fun App() {
+fun App(
+    windowScope: WindowScope? = null,
+    onMinimize: () -> Unit = {},
+    onMaximizeToggle: () -> Unit = {},
+    onClose: () -> Unit = {},
+) {
     val profileManager = remember { ProfileManager() }
     var currentTheme by remember { mutableStateOf(profileManager.themePreference) }
 
@@ -55,6 +63,10 @@ fun App() {
                         currentTheme = newTheme
                         profileManager.themePreference = newTheme
                     },
+                    windowScope = windowScope,
+                    onMinimize = onMinimize,
+                    onMaximizeToggle = onMaximizeToggle,
+                    onClose = onClose,
                 )
             }
 
@@ -206,6 +218,10 @@ private fun MainScreen(
     profileManager: ProfileManager,
     currentTheme: String,
     onThemeChange: (String) -> Unit,
+    windowScope: WindowScope?,
+    onMinimize: () -> Unit,
+    onMaximizeToggle: () -> Unit,
+    onClose: () -> Unit,
 ) {
     var showProfileDialog by remember { mutableStateOf(false) }
     var showGuideDialog by remember { mutableStateOf(profileManager.isFirstLaunch) }
@@ -247,17 +263,27 @@ private fun MainScreen(
 
     Scaffold(
         topBar = {
-            TopBar(
-                burstCount = burstCount,
-                selectedCount = selectedIds.size,
-                onDownloadClick = viewModel::downloadSelectedItems,
-                onClearSelection = viewModel::clearSelection,
-                onLibraryClick = { viewModel.toggleDownloadsModal(true) },
-                onProfileClick = { showProfileDialog = true },
-                onHelpClick = { showGuideDialog = true },
-                isSelectionModeActive = isSelectionModeActive,
-                onToggleSelectionMode = viewModel::toggleSelectionMode,
-            )
+            val topBarContent = @Composable {
+                TopBar(
+                    burstCount = burstCount,
+                    selectedCount = selectedIds.size,
+                    onDownloadClick = viewModel::downloadSelectedItems,
+                    onClearSelection = viewModel::clearSelection,
+                    onLibraryClick = { viewModel.toggleDownloadsModal(true) },
+                    onProfileClick = { showProfileDialog = true },
+                    onHelpClick = { showGuideDialog = true },
+                    isSelectionModeActive = isSelectionModeActive,
+                    onToggleSelectionMode = viewModel::toggleSelectionMode,
+                    onMinimize = onMinimize,
+                    onMaximizeToggle = onMaximizeToggle,
+                    onClose = onClose,
+                )
+            }
+            if (windowScope != null) {
+                windowScope.WindowDraggableArea { topBarContent() }
+            } else {
+                topBarContent()
+            }
         },
         containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
