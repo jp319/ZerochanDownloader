@@ -14,19 +14,20 @@ import compose.icons.tablericons.*
 @Composable
 fun TopBar(
     burstCount: Int,
-    selectedCount: Int, // 👈 New parameter
-    onDownloadClick: () -> Unit, // 👈 New parameter
-    onClearSelection: () -> Unit, // 👈 New parameter
+    selectedCount: Int,
+    onDownloadClick: () -> Unit,
+    onClearSelection: () -> Unit,
     onProfileClick: () -> Unit,
     onLibraryClick: () -> Unit,
-    isSelectionModeActive: Boolean, // 👈 New parameter
-    onToggleSelectionMode: () -> Unit, // 👈 New parameter
+    isSelectionModeActive: Boolean,
+    onToggleSelectionMode: () -> Unit,
 ) {
-    val counterColor = when {
-        burstCount >= 40 -> MaterialTheme.colorScheme.error
-        burstCount >= 20 -> MaterialTheme.colorScheme.secondary
-        else -> MaterialTheme.colorScheme.primary
-    }
+    val counterColor =
+        when {
+            burstCount >= 40 -> MaterialTheme.colorScheme.error
+            burstCount >= 20 -> MaterialTheme.colorScheme.secondary
+            else -> MaterialTheme.colorScheme.primary
+        }
 
     Surface(
         color = if (selectedCount > 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.background,
@@ -36,8 +37,7 @@ fun TopBar(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(horizontal = 16.dp).fillMaxSize(),
         ) {
-
-            // 👇 Contextual Action Bar Logic
+            // Contextual Action Bar Logic
             if (selectedCount > 0) {
                 // SELECTION MODE ACTIVE
                 IconButton(onClick = onClearSelection) {
@@ -47,11 +47,11 @@ fun TopBar(
                     text = "$selectedCount selected",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
                 Button(
                     onClick = onDownloadClick,
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 ) {
                     Icon(TablerIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
@@ -66,39 +66,44 @@ fun TopBar(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
 
                 Surface(
                     color = counterColor.copy(alpha = 0.2f),
-                    shape = MaterialTheme.shapes.small
+                    shape = MaterialTheme.shapes.small,
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
-                        Icon(TablerIcons.AlertTriangle, contentDescription = "API Usage", modifier = Modifier.size(16.dp), tint = counterColor)
+                        Icon(
+                            TablerIcons.AlertTriangle,
+                            contentDescription = "API Usage",
+                            modifier = Modifier.size(16.dp),
+                            tint = counterColor,
+                        )
                         Spacer(Modifier.width(4.dp))
                         Text(
                             text = "$burstCount / 60",
                             style = MaterialTheme.typography.labelMedium,
                             color = counterColor,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                 }
 
                 IconToggleButton(
                     checked = isSelectionModeActive,
-                    onCheckedChange = { onToggleSelectionMode() }
+                    onCheckedChange = { onToggleSelectionMode() },
                 ) {
                     Icon(
                         imageVector = TablerIcons.CircleCheck,
                         contentDescription = "Selection Mode",
-                        tint = if (isSelectionModeActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = if (isSelectionModeActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                IconButton(onClick = onLibraryClick) { // 👈 Add this button!
+                IconButton(onClick = onLibraryClick) {
                     Icon(TablerIcons.Download, contentDescription = "Local Library", tint = MaterialTheme.colorScheme.primary)
                 }
                 IconButton(onClick = onProfileClick) {

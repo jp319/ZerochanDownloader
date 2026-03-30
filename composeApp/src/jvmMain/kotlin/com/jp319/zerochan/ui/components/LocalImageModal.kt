@@ -34,7 +34,7 @@ import java.io.File
 @Composable
 fun LocalImageModal(
     file: File?,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     if (file == null) return
 
@@ -44,40 +44,45 @@ fun LocalImageModal(
 
     // Reset zoom when the file changes
     LaunchedEffect(file.absolutePath) {
-        scale = 1f; offsetX = 0f; offsetY = 0f
+        scale = 1f
+        offsetX = 0f
+        offsetY = 0f
     }
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnBackPress = true, dismissOnClickOutside = true)
+        properties = DialogProperties(usePlatformDefaultWidth = false, dismissOnBackPress = true, dismissOnClickOutside = true),
     ) {
         Box(
             modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.85f)).clickable { onDismiss() },
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxSize().padding(24.dp).clickable(enabled = false) {}
+                modifier = Modifier.fillMaxSize().padding(24.dp).clickable(enabled = false) {},
             ) {
                 // Header
                 Row(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp), horizontalArrangement = Arrangement.End) {
                     IconButton(
                         onClick = onDismiss,
-                        colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), contentColor = Color.White)
+                        colors =
+                            IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                contentColor = Color.White,
+                            ),
                     ) { Icon(TablerIcons.CircleX, contentDescription = "Close") }
                 }
 
                 // Image Container
                 Surface(shape = RoundedCornerShape(8.dp), color = Color.Transparent, modifier = Modifier.weight(1f).fillMaxWidth()) {
-
                     val isGif = file.extension.equals("gif", ignoreCase = true)
 
                     if (isGif) {
                         var animatedImage by remember(file.absolutePath) { mutableStateOf<AnimatedImage?>(null) }
 
                         LaunchedEffect(file.absolutePath) {
-                            // 👇 Pass the actual path string!
+                            // Pass the actual path string
                             animatedImage = loadAnimatedImage(file.absolutePath)
                         }
 
@@ -93,61 +98,75 @@ fun LocalImageModal(
                         }
                     } else {
                         SubcomposeAsyncImage(
-                            // 👇 1. Force Coil to read the ORIGINAL massive file size from disk
-                            model = ImageRequest.Builder(LocalPlatformContext.current)
-                                .data(file)
-                                .size(Size.ORIGINAL)
-                                .build(),
+                            // Force Coil to read the ORIGNAL massive file size from disk
+                            model =
+                                ImageRequest.Builder(LocalPlatformContext.current)
+                                    .data(file)
+                                    .size(Size.ORIGINAL)
+                                    .build(),
                             contentDescription = file.name,
                             contentScale = ContentScale.Fit,
-                            filterQuality = FilterQuality.High, // 👇 2. High-quality GPU filtering
+                            filterQuality = FilterQuality.High, // High-quality GPU filtering
                             loading = {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                                 }
                             },
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .pointerInput(Unit) {
-                                    detectTransformGestures { _, pan, zoom, _ ->
-                                        scale = (scale * zoom).coerceIn(1f, 5f)
-                                        if (scale > 1f) {
-                                            offsetX += pan.x; offsetY += pan.y
-                                        } else {
-                                            offsetX = 0f; offsetY = 0f
-                                        }
-                                    }
-                                }
-                                .pointerInput(Unit) {
-                                    awaitPointerEventScope {
-                                        while (true) {
-                                            val event = awaitPointerEvent()
-                                            if (event.type == PointerEventType.Scroll) {
-                                                val deltaY = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
-                                                scale = (scale - deltaY * 0.15f).coerceIn(1f, 5f)
-                                                if (scale <= 1f) {
-                                                    offsetX = 0f; offsetY = 0f
-                                                }
-                                                event.changes.forEach { it.consume() }
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .pointerInput(Unit) {
+                                        detectTransformGestures { _, pan, zoom, _ ->
+                                            scale = (scale * zoom).coerceIn(1f, 5f)
+                                            if (scale > 1f) {
+                                                offsetX += pan.x
+                                                offsetY += pan.y
+                                            } else {
+                                                offsetX = 0f
+                                                offsetY = 0f
                                             }
                                         }
                                     }
-                                }
-                                .pointerInput(Unit) {
-                                    detectTapGestures(onDoubleTap = { scale = 1f; offsetX = 0f; offsetY = 0f })
-                                }
-                                .graphicsLayer(
-                                    scaleX = scale,
-                                    scaleY = scale,
-                                    translationX = offsetX,
-                                    translationY = offsetY
-                                )
+                                    .pointerInput(Unit) {
+                                        awaitPointerEventScope {
+                                            while (true) {
+                                                val event = awaitPointerEvent()
+                                                if (event.type == PointerEventType.Scroll) {
+                                                    val deltaY = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
+                                                    scale = (scale - deltaY * 0.15f).coerceIn(1f, 5f)
+                                                    if (scale <= 1f) {
+                                                        offsetX = 0f
+                                                        offsetY = 0f
+                                                    }
+                                                    event.changes.forEach { it.consume() }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .pointerInput(Unit) {
+                                        detectTapGestures(onDoubleTap = {
+                                            scale = 1f
+                                            offsetX = 0f
+                                            offsetY = 0f
+                                        })
+                                    }
+                                    .graphicsLayer(
+                                        scaleX = scale,
+                                        scaleY = scale,
+                                        translationX = offsetX,
+                                        translationY = offsetY,
+                                    ),
                         )
                     }
                 }
 
                 // Footer (File Name)
-                Text(text = file.name, style = MaterialTheme.typography.titleMedium, color = Color.White, modifier = Modifier.padding(top = 16.dp))
+                Text(
+                    text = file.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
             }
         }
     }

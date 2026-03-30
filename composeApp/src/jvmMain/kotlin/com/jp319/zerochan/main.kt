@@ -18,24 +18,28 @@ fun main() {
     // Initialize Coil with OkHttp network support
     SingletonImageLoader.setSafe { context ->
 
-        // 👇 1. Build the custom OkHttpClient to handle massive files and bypass Cloudflare
-        val customOkHttpClient = OkHttpClient.Builder()
-            .connectTimeout(60, TimeUnit.SECONDS) // 60 seconds to connect
-            .readTimeout(60, TimeUnit.SECONDS)    // 60 seconds to download
-            .addNetworkInterceptor(ProgressInterceptor())
-            .addInterceptor(Interceptor { chain ->
-                val originalRequest = chain.request()
-                val disguisedRequest = originalRequest.newBuilder()
-                    .header("Referer", "https://www.zerochan.net/")
-                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                    .build()
-                chain.proceed(disguisedRequest)
-            })
-            .build()
+        // Build the custom OkHttpClient to handle massive files and bypass Cloudflare
+        val customOkHttpClient =
+            OkHttpClient.Builder()
+                .connectTimeout(60, TimeUnit.SECONDS) // 60 seconds to connect
+                .readTimeout(60, TimeUnit.SECONDS) // 60 seconds to download
+                .addNetworkInterceptor(ProgressInterceptor())
+                .addInterceptor(
+                    Interceptor { chain ->
+                        val originalRequest = chain.request()
+                        val disguisedRequest =
+                            originalRequest.newBuilder()
+                                .header("Referer", "https://www.zerochan.net/")
+                                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                                .build()
+                        chain.proceed(disguisedRequest)
+                    },
+                )
+                .build()
 
         ImageLoader.Builder(PlatformContext.INSTANCE)
             .components {
-                // 👇 2. Tell the fetcher to use our custom client!
+                // Tell the fetcher to use our custom client!
                 add(OkHttpNetworkFetcherFactory(callFactory = { customOkHttpClient }))
             }
             .memoryCache {
@@ -48,10 +52,11 @@ fun main() {
     }
 
     // Load via AWT — works across KDE, XFCE, and GNOME
-    val icon = Thread.currentThread()
-        .contextClassLoader
-        .getResourceAsStream("drawable/logo.png")
-        ?.let { ImageIO.read(it) }
+    val icon =
+        Thread.currentThread()
+            .contextClassLoader
+            .getResourceAsStream("drawable/logo.png")
+            ?.let { ImageIO.read(it) }
 
     application {
         Window(

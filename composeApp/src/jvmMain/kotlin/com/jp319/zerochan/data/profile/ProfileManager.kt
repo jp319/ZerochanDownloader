@@ -3,9 +3,16 @@ package com.jp319.zerochan.data.profile
 import java.io.File
 import java.util.prefs.Preferences
 
+/**
+ * Manages user profile settings and state persistence across application sessions.
+ * Backed by Java Preferences API for lightweight, simple local storage.
+ */
 class ProfileManager {
     private val prefs = Preferences.userNodeForPackage(ProfileManager::class.java)
 
+    /**
+     * The active Zerochan username. Required for making authenticated/whitelisted API calls.
+     */
     var username: String
         get() = prefs.get(KEY_USERNAME, "")
         set(value) {
@@ -13,10 +20,12 @@ class ProfileManager {
             prefs.flush()
         }
 
-    // 👇 1. Add the persistent download directory property
+    /**
+     * The system path where downloaded full-resolution images are saved.
+     * Defaults to the native OS 'Downloads/Zerochan' folder.
+     */
     var downloadDirectory: String
         get() {
-            // Create a safe default path in the user's native Downloads folder
             val defaultPath = File(System.getProperty("user.home"), "Downloads/Zerochan").absolutePath
             return prefs.get(KEY_DOWNLOAD_DIR, defaultPath)
         }
@@ -25,31 +34,54 @@ class ProfileManager {
             prefs.flush()
         }
 
+    /**
+     * Stores up to the last 10 successful search queries for quick autocomplete referencing.
+     */
     var searchHistory: List<String>
         get() {
-            val historyString = prefs.get("search_history", "")
+            val historyString = prefs.get(KEY_SEARCH_HISTORY, "")
             return if (historyString.isBlank()) emptyList() else historyString.split("||")
         }
         set(value) {
-            // Keep only the last 10 searches
             val safeList = value.take(10).joinToString("||")
-            prefs.put("search_history", safeList)
+            prefs.put(KEY_SEARCH_HISTORY, safeList)
             prefs.flush()
         }
 
+    /**
+     * Retrieves the UNIX timestamp of the last API request made by this user.
+     * Used exclusively for rate-limiting calculations.
+     */
     fun getLastRequestTime(user: String): Long {
         return prefs.getLong("${KEY_LAST_REQUEST_PREFIX}_$user", 0L)
     }
 
-    fun updateLastRequestTime(user: String, time: Long) {
+    /**
+     * Records the exact time an API request was dispatched to Zerochan.
+     */
+    fun updateLastRequestTime(
+        user: String,
+        time: Long,
+    ) {
         prefs.putLong("${KEY_LAST_REQUEST_PREFIX}_$user", time)
         prefs.flush()
     }
 
+    /**
+     * Property for observing or updating the user's theme color preference.
+     */
+    var themePreference: String
+        get() = prefs.get(KEY_THEME_PREFERENCE, "Orange")
+        set(value) {
+            prefs.put(KEY_THEME_PREFERENCE, value)
+            prefs.flush()
+        }
+
     companion object {
         private const val KEY_USERNAME = "username"
         private const val KEY_LAST_REQUEST_PREFIX = "last_request_time"
-        // 👇 2. Add the key constant
         private const val KEY_DOWNLOAD_DIR = "download_directory"
+        private const val KEY_SEARCH_HISTORY = "search_history"
+        private const val KEY_THEME_PREFERENCE = "theme_preference"
     }
 }

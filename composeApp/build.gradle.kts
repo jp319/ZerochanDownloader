@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     alias(libs.plugins.kotlinxSerialization)
+    alias(libs.plugins.ktlint)
 }
 
 kotlin {
@@ -41,7 +42,6 @@ kotlin {
         }
     }
 }
-
 
 compose.desktop {
     application {

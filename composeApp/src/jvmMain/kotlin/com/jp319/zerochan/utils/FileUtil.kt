@@ -5,7 +5,6 @@ import java.io.File
 import javax.swing.JFileChooser
 
 object FileUtil {
-
     // Reads image files directly from the hard drive
     fun getImagesFromDirectory(directoryPath: String): List<File> {
         val dir = File(directoryPath)
@@ -17,12 +16,16 @@ object FileUtil {
     }
 
     // Opens the OS native folder picker
-    fun chooseDirectory(currentPath: String, onPathSelected: (String) -> Unit) {
-        val chooser = JFileChooser(currentPath).apply {
-            fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-            dialogTitle = "Select Download Directory"
-            isAcceptAllFileFilterUsed = false
-        }
+    fun chooseDirectory(
+        currentPath: String,
+        onPathSelected: (String) -> Unit,
+    ) {
+        val chooser =
+            JFileChooser(currentPath).apply {
+                fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+                dialogTitle = "Select Download Directory"
+                isAcceptAllFileFilterUsed = false
+            }
 
         if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
             onPathSelected(chooser.selectedFile.absolutePath)

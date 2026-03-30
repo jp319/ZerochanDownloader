@@ -30,46 +30,47 @@ fun SearchBar(
     onToggleFilters: () -> Unit,
     isFilterPanelVisible: Boolean,
     isLoading: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier = modifier) {
         val searchBarWidth = maxWidth
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-
-            // 👇 1. The custom Surface provides the background color and shape!
+            // The custom Surface provides the background color and shape
             Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(40.dp), // Perfect 40dp height without clipping
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .height(40.dp),
+                // Perfect 40dp height without clipping
                 shape = MaterialTheme.shapes.extraLarge,
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) // The background color!
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), // The background color!
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp),
                 ) {
                     // Leading Icon
                     Icon(
                         TablerIcons.Search,
                         contentDescription = "Search",
                         modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // 👇 2. BasicTextField gives us raw control with zero default padding
+                    // BasicTextField gives us raw control with zero default padding
                     Box(
                         modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.CenterStart
+                        contentAlignment = Alignment.CenterStart,
                     ) {
                         // Custom Placeholder
                         if (query.isEmpty()) {
                             Text(
                                 "Search tags (e.g., Frieren, One Piece)...",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                             )
                         }
 
@@ -80,19 +81,21 @@ fun SearchBar(
                             textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
                             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            keyboardActions = KeyboardActions(
-                                onSearch = {
-                                    if (query.isNotBlank() && !isLoading) {
-                                        onFocusChanged(false)
-                                        onSearch(query)
-                                    }
-                                }
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .onFocusChanged { focusState ->
-                                    onFocusChanged(focusState.isFocused)
-                                }
+                            keyboardActions =
+                                KeyboardActions(
+                                    onSearch = {
+                                        if (query.isNotBlank() && !isLoading) {
+                                            onFocusChanged(false)
+                                            onSearch(query)
+                                        }
+                                    },
+                                ),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .onFocusChanged { focusState ->
+                                        onFocusChanged(focusState.isFocused)
+                                    },
                         )
                     }
 
@@ -103,13 +106,13 @@ fun SearchBar(
                                 onQueryChange("")
                                 onFocusChanged(true)
                             },
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
                         ) {
                             Icon(
                                 TablerIcons.X,
                                 contentDescription = "Clear",
                                 modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -127,13 +130,13 @@ fun SearchBar(
                 enabled = query.isNotBlank() && !isLoading,
                 modifier = Modifier.height(40.dp),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-                shape = MaterialTheme.shapes.extraLarge
+                shape = MaterialTheme.shapes.extraLarge,
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
                         color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
                     )
                     Spacer(Modifier.width(6.dp))
                     Text("Searching...", style = MaterialTheme.typography.labelMedium)
@@ -150,8 +153,12 @@ fun SearchBar(
             IconButton(
                 onClick = onToggleFilters,
                 modifier = Modifier.size(40.dp),
-                colors = if (isFilterPanelVisible) IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                else IconButtonDefaults.filledTonalIconButtonColors()
+                colors =
+                    if (isFilterPanelVisible) {
+                        IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                    } else {
+                        IconButtonDefaults.filledTonalIconButtonColors()
+                    },
             ) {
                 Icon(TablerIcons.AdjustmentsHorizontal, contentDescription = "Filters", modifier = Modifier.size(20.dp))
             }
@@ -162,7 +169,7 @@ fun SearchBar(
             expanded = suggestions.isNotEmpty(),
             onDismissRequest = { onFocusChanged(false) },
             modifier = Modifier.width(searchBarWidth).heightIn(max = 400.dp),
-            properties = PopupProperties(focusable = false)
+            properties = PopupProperties(focusable = false),
         ) {
             suggestions.forEach { suggestion ->
                 DropdownMenuItem(
@@ -179,14 +186,14 @@ fun SearchBar(
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    overflow = TextOverflow.Ellipsis,
                                 )
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     if (!suggestion.type.isNullOrBlank()) {
                                         Text(
                                             text = suggestion.type,
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.primary
+                                            color = MaterialTheme.colorScheme.primary,
                                         )
                                     }
                                     if (!suggestion.alias.isNullOrBlank() && suggestion.alias != suggestion.value) {
@@ -195,7 +202,7 @@ fun SearchBar(
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
+                                            overflow = TextOverflow.Ellipsis,
                                         )
                                     }
                                 }
@@ -204,27 +211,33 @@ fun SearchBar(
                             if (suggestion.total != null && suggestion.total > 0) {
                                 Surface(
                                     color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = MaterialTheme.shapes.small
+                                    shape = MaterialTheme.shapes.small,
                                 ) {
                                     Text(
                                         text = "${suggestion.total}",
                                         style = MaterialTheme.typography.labelSmall,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                     )
                                 }
                             }
                         }
                     },
                     leadingIcon = {
-                        val icon = when (suggestion.type?.lowercase()) {
-                            "recent search" -> TablerIcons.History
-                            "character" -> TablerIcons.User
-                            "mangaka", "studio" -> TablerIcons.Brush
-                            "series", "game" -> TablerIcons.Book
-                            else -> TablerIcons.Tag
-                        }
-                        Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                        val icon =
+                            when (suggestion.type?.lowercase()) {
+                                "recent search" -> TablerIcons.History
+                                "character" -> TablerIcons.User
+                                "mangaka", "studio" -> TablerIcons.Brush
+                                "series", "game" -> TablerIcons.Book
+                                else -> TablerIcons.Tag
+                            }
+                        Icon(
+                            icon,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    },
                 )
             }
         }

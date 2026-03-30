@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.isPrimaryPressed
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -36,10 +37,11 @@ import compose.icons.tablericons.Check
 @Composable
 fun ImageCard(
     item: ZerochanItem,
-    isSelected: Boolean = false,              // 👈 New param
-    isSelectionModeActive: Boolean = false,   // 👈 New param
+    isSelected: Boolean = false,
+    isSelectionModeActive: Boolean = false,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,                  // 👈 New param for right-click/long-press
+    onLongClick: () -> Unit,
+    onDragSelect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val safeImageUrl = item.thumbnail.replace(".avif", ".jpg")
@@ -50,7 +52,7 @@ fun ImageCard(
     val overlayAlpha by animateFloatAsState(
         targetValue = if (isHovered || isSelected) 1f else 0f,
         animationSpec = tween(durationMillis = 200),
-        label = "HoverAlpha"
+        label = "HoverAlpha",
     )
 
     val placeholderColor = MaterialTheme.colorScheme.surfaceVariant
@@ -59,17 +61,22 @@ fun ImageCard(
     Surface(
         shape = MaterialTheme.shapes.medium,
         tonalElevation = 2.dp,
-        // 👇 Add a border if it is selected
+        // Add border for active selection state
         border = if (isSelected) BorderStroke(3.dp, MaterialTheme.colorScheme.primary) else null,
-        modifier = modifier
-            .fillMaxWidth()
-            // 👇 Replaced standard clickable with combinedClickable to catch long-press/right-click
-            .combinedClickable(
-                onClick = onClick,
-                onLongClick = onLongClick
-            )
-            .onPointerEvent(PointerEventType.Enter) { isHovered = true }
-            .onPointerEvent(PointerEventType.Exit) { isHovered = false }
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = onLongClick,
+                )
+                .onPointerEvent(PointerEventType.Enter) { event -> 
+                    isHovered = true
+                    if (isSelectionModeActive && event.buttons.isPrimaryPressed) {
+                        onDragSelect()
+                    }
+                }
+                .onPointerEvent(PointerEventType.Exit) { isHovered = false },
     ) {
         Box(contentAlignment = Alignment.BottomCenter) {
             AsyncImage(
@@ -78,23 +85,28 @@ fun ImageCard(
                 contentScale = ContentScale.FillWidth,
                 placeholder = remember(placeholderColor) { ColorPainter(placeholderColor) },
                 error = remember(errorColor) { ColorPainter(errorColor) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(imageAspectRatio)
-                    .clip(MaterialTheme.shapes.medium)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(imageAspectRatio)
+                        .clip(MaterialTheme.shapes.medium),
             )
 
             // Hover / Selected Overlay
             Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .alpha(overlayAlpha)
-                    .background(
-                        if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
-                        else Color.Black.copy(alpha = 0.6f)
-                    )
-                    .padding(8.dp),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .matchParentSize()
+                        .alpha(overlayAlpha)
+                        .background(
+                            if (isSelected) {
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                            } else {
+                                Color.Black.copy(alpha = 0.6f)
+                            },
+                        )
+                        .padding(8.dp),
+                contentAlignment = Alignment.Center,
             ) {
                 if (!isSelected) {
                     Text(
@@ -104,30 +116,31 @@ fun ImageCard(
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
                         maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
 
-            // 👇 Show a beautiful checkmark indicator in the corner
+            // Selection indicator checkmark overlay
             if (isSelected || (isHovered && isSelectionModeActive)) {
                 Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .padding(8.dp),
-                    contentAlignment = Alignment.TopStart
+                    modifier =
+                        Modifier
+                            .matchParentSize()
+                            .padding(8.dp),
+                    contentAlignment = Alignment.TopStart,
                 ) {
                     Surface(
                         shape = CircleShape,
                         color = if (isSelected) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.5f),
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
                     ) {
                         if (isSelected) {
                             Icon(
                                 imageVector = TablerIcons.Check,
                                 contentDescription = "Selected",
                                 tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.padding(4.dp)
+                                modifier = Modifier.padding(4.dp),
                             )
                         }
                     }

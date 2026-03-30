@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -18,7 +20,8 @@ fun ItemDetailsDialog(
     details: ZerochanFullItem?,
     isLoading: Boolean,
     onDismiss: () -> Unit,
-    onDownload: () -> Unit // 👈 New Parameter
+    onDownload: () -> Unit,
+    onSearchTag: (String) -> Unit,
 ) {
     if (details == null && !isLoading) return
 
@@ -38,14 +41,14 @@ fun ItemDetailsDialog(
                 }
             } else if (details != null) {
                 LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     item {
                         // Meta Info Grid
                         Surface(
                             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            shape = MaterialTheme.shapes.medium
+                            shape = MaterialTheme.shapes.medium,
                         ) {
                             Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 DetailRow(TablerIcons.Maximize, "Resolution", "${details.width} x ${details.height}")
@@ -69,13 +72,40 @@ fun ItemDetailsDialog(
                         FlowRow(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             details.tags.forEach { tag ->
-                                SuggestionChip(
-                                    onClick = { /* Could trigger a search in the future! */ },
-                                    label = { Text(tag) }
-                                )
+                                var expanded by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+                                Box {
+                                    SuggestionChip(
+                                        onClick = { expanded = true },
+                                        label = { Text(tag) },
+                                    )
+                                    DropdownMenu(
+                                        expanded = expanded,
+                                        onDismissRequest = { expanded = false }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text("Search Tag") },
+                                            onClick = {
+                                                expanded = false
+                                                onSearchTag(tag)
+                                                onDismiss()
+                                            },
+                                            leadingIcon = { Icon(TablerIcons.Search, null) }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text("Copy Tag") },
+                                            onClick = {
+                                                expanded = false
+                                                val clipboard = java.awt.Toolkit.getDefaultToolkit().systemClipboard
+                                                val selection = java.awt.datatransfer.StringSelection(tag)
+                                                clipboard.setContents(selection, null)
+                                            },
+                                            leadingIcon = { Icon(TablerIcons.Copy, null) }
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -84,7 +114,7 @@ fun ItemDetailsDialog(
         },
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                // 👇 Add the explicit URL Download Button
+                // Add the explicit URL Download Button
                 if (details != null) {
                     Button(onClick = onDownload) {
                         Icon(TablerIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -94,16 +124,25 @@ fun ItemDetailsDialog(
                 }
                 TextButton(onClick = onDismiss) { Text("Close") }
             }
-        }
+        },
     )
 }
 
 @Composable
-private fun DetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, value: String) {
+private fun DetailRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String,
+) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.width(8.dp))
-        Text(text = "$label: ", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            text = "$label: ",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Text(text = value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
     }
 }

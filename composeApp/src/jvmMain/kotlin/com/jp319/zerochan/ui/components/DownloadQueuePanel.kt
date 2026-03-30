@@ -29,7 +29,7 @@ import compose.icons.tablericons.Check
 fun DownloadQueuePanel(
     queue: List<DownloadJob>,
     onClearCompleted: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     if (queue.isEmpty()) return
 
@@ -39,14 +39,14 @@ fun DownloadQueuePanel(
     Card(
         modifier = modifier.width(350.dp).padding(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
             // Header
             Row(
                 modifier = Modifier.fillMaxWidth().padding(12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text("Downloads", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
                 TextButton(onClick = onClearCompleted) {
@@ -57,14 +57,14 @@ fun DownloadQueuePanel(
             HorizontalDivider(
                 Modifier,
                 DividerDefaults.Thickness,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
             )
 
             // The List of Jobs
             LazyColumn(
                 modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp),
                 contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 items(queue, key = { it.item.id }) { job ->
                     DownloadRow(job, progressMap)
@@ -75,22 +75,25 @@ fun DownloadQueuePanel(
 }
 
 @Composable
-private fun DownloadRow(job: DownloadJob, progressMap: Map<String, Float>) {
+private fun DownloadRow(
+    job: DownloadJob,
+    progressMap: Map<String, Float>,
+) {
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             // Thumbnail
             AsyncImage(
                 model = job.item.thumbnail.replace(".avif", ".jpg"),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(6.dp)).background(Color.DarkGray)
+                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(6.dp)).background(Color.DarkGray),
             )
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -102,14 +105,24 @@ private fun DownloadRow(job: DownloadJob, progressMap: Map<String, Float>) {
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Spacer(modifier = Modifier.height(4.dp))
 
                 when (job.state) {
-                    DownloadState.PREPARING -> Text("Finding high-res...", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    DownloadState.PREPARING ->
+                        Text(
+                            "Finding high-res...",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     DownloadState.SUCCESS -> Text("Complete", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50))
-                    DownloadState.ERROR -> Text("Failed", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                    DownloadState.ERROR ->
+                        Text(
+                            "Failed",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
                     DownloadState.DOWNLOADING -> {
                         // Look up the live progress using the resolved URL!
                         val progress = job.resolvedUrl?.let { progressMap[it] } ?: 0f
@@ -118,7 +131,7 @@ private fun DownloadRow(job: DownloadJob, progressMap: Map<String, Float>) {
                                 progress = { progress },
                                 modifier = Modifier.weight(1f).height(4.dp),
                                 color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("${(progress * 100).toInt()}%", style = MaterialTheme.typography.labelSmall)
@@ -130,9 +143,25 @@ private fun DownloadRow(job: DownloadJob, progressMap: Map<String, Float>) {
             // Status Icons
             Spacer(modifier = Modifier.width(8.dp))
             when (job.state) {
-                DownloadState.SUCCESS -> Icon(TablerIcons.Check, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
-                DownloadState.ERROR -> Icon(TablerIcons.AlertTriangle, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
-                DownloadState.PREPARING, DownloadState.DOWNLOADING -> CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                DownloadState.SUCCESS ->
+                    Icon(
+                        TablerIcons.Check,
+                        contentDescription = null,
+                        tint = Color(0xFF4CAF50),
+                        modifier = Modifier.size(20.dp),
+                    )
+                DownloadState.ERROR ->
+                    Icon(
+                        TablerIcons.AlertTriangle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp),
+                    )
+                DownloadState.PREPARING, DownloadState.DOWNLOADING ->
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                    )
             }
         }
     }

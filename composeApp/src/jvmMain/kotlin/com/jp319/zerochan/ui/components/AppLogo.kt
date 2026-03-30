@@ -18,6 +18,6 @@ fun AppLogo(
     Image(
         painter = painterResource(Res.drawable.logo),
         contentDescription = "ZeroChan logo",
-        modifier = modifier.size(size),  // caller can override entirely if needed
+        modifier = modifier.size(size), // caller can override entirely if needed
     )
 }

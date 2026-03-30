@@ -39,17 +39,17 @@ fun ImageModal(
     verifiedUrl: String?,
     onDismiss: () -> Unit,
     onViewDetails: (Int) -> Unit,
-    onDownload: () -> Unit, // 👈 New Parameter
-    fetchGifFile: suspend (String) -> File? // 👈 Updated signature
+    onDownload: () -> Unit,
+    fetchGifFile: suspend (Int, String) -> File?,
 ) {
     if (item == null) return
 
-    // 👇 1. State for Zooming and Panning
+    // State for Zooming and Panning
     var scale by remember { mutableFloatStateOf(1f) }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
 
-    // 👇 2. Reset zoom and pan when opening a new image
+    // Reset zoom and pan when opening a new image
     LaunchedEffect(item.id) {
         scale = 1f
         offsetX = 0f
@@ -58,32 +58,35 @@ fun ImageModal(
 
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true
-        )
+        properties =
+            DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+            ),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.85f))
-                .clickable { onDismiss() },
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.85f))
+                    .clickable { onDismiss() },
+            contentAlignment = Alignment.Center,
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp)
-                    .clickable(enabled = false) { } // prevent click-through
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(24.dp)
+                        .clickable(enabled = false) { }, // prevent click-through
             ) {
                 // Header with actions
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                     horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     FilledTonalButton(onClick = onDownload, modifier = Modifier.padding(end = 8.dp)) {
                         Icon(TablerIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -93,7 +96,7 @@ fun ImageModal(
 
                     FilledTonalButton(
                         onClick = { onViewDetails(item.id) },
-                        modifier = Modifier.padding(end = 8.dp)
+                        modifier = Modifier.padding(end = 8.dp),
                     ) {
                         Icon(TablerIcons.InfoCircle, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
@@ -102,30 +105,31 @@ fun ImageModal(
 
                     IconButton(
                         onClick = onDismiss,
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        colors =
+                            IconButtonDefaults.iconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
                     ) {
                         Icon(TablerIcons.CircleX, contentDescription = "Close")
                     }
                 }
 
-                // 👇 1. Add a state to track retries
+                // Add a state to track retries
                 var retryTrigger by remember { mutableIntStateOf(0) }
-                // 👇 1. Collect the global progress state
+                // Collect the global progress state
                 val progressMap by DownloadProgressTracker.progress.collectAsState()
 
-                // 👇 2. Extract the progress specifically for the URL we are trying to load (defaults to 0f)
+                // Extract the progress specifically for the URL we are trying to load
                 val currentProgress = verifiedUrl?.let { progressMap[it] } ?: 0f
 
                 // Image display container
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = Color.Transparent,
-                    modifier = Modifier.weight(1f).fillMaxWidth()
+                    modifier = Modifier.weight(1f).fillMaxWidth(),
                 ) {
-                    // 👇 STEP 1: Catch null URL first to prevent Coil/GIF from panicking
+                    // Catch null URL first to prevent Coil/GIF from panicking
                     if (verifiedUrl == null) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -137,7 +141,7 @@ fun ImageModal(
                             var animatedImage by remember(verifiedUrl) { mutableStateOf<AnimatedImage?>(null) }
 
                             LaunchedEffect(verifiedUrl) {
-                                val tempFile = fetchGifFile(verifiedUrl)
+                                val tempFile = fetchGifFile(item.id, verifiedUrl)
                                 if (tempFile != null) {
                                     animatedImage = org.jetbrains.compose.animatedimage.loadAnimatedImage(tempFile.absolutePath)
                                 }
@@ -146,45 +150,59 @@ fun ImageModal(
                             // Just call the component! It handles loading vs playing internally.
                             ZoomableGifViewer(
                                 animatedImage = animatedImage,
-                                progress = currentProgress // This comes from your DownloadProgressTracker
+                                progress = currentProgress, // This comes from your DownloadProgressTracker
                             )
                         } else {
-                            // 👇 STEP 3: Unified Progress UI for Coil Loading
+                            // Unified Progress UI for Coil Loading
                             key(retryTrigger) {
                                 coil3.compose.SubcomposeAsyncImage(
-                                    model = ImageRequest.Builder(LocalPlatformContext.current)
-                                        .data(verifiedUrl)
-                                        .size(Size.ORIGINAL)
-                                        .build(),
+                                    model =
+                                        ImageRequest.Builder(LocalPlatformContext.current)
+                                            .data(verifiedUrl)
+                                            .size(Size.ORIGINAL)
+                                            .build(),
                                     contentDescription = item.tag,
                                     contentScale = ContentScale.Fit,
                                     filterQuality = FilterQuality.High,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .pointerInput(Unit) {
-                                            detectTransformGestures { _, pan, zoom, _ ->
-                                                scale = (scale * zoom).coerceIn(1f, 5f)
-                                                if (scale > 1f) { offsetX += pan.x; offsetY += pan.y }
-                                                else { offsetX = 0f; offsetY = 0f }
-                                            }
-                                        }
-                                        .pointerInput(Unit) {
-                                            awaitPointerEventScope {
-                                                while (true) {
-                                                    val event = awaitPointerEvent()
-                                                    if (event.type == PointerEventType.Scroll) {
-                                                        val deltaY = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
-                                                        scale = (scale - deltaY * 0.15f).coerceIn(1f, 5f)
-                                                        if (scale <= 1f) { offsetX = 0f; offsetY = 0f }
-                                                        event.changes.forEach { it.consume() }
+                                    modifier =
+                                        Modifier
+                                            .fillMaxSize()
+                                            .pointerInput(Unit) {
+                                                detectTransformGestures { _, pan, zoom, _ ->
+                                                    scale = (scale * zoom).coerceIn(1f, 5f)
+                                                    if (scale > 1f) {
+                                                        offsetX += pan.x
+                                                        offsetY += pan.y
+                                                    } else {
+                                                        offsetX = 0f
+                                                        offsetY = 0f
                                                     }
                                                 }
                                             }
-                                        }
-                                        .pointerInput(Unit) {
-                                            detectTapGestures(onDoubleTap = { scale = 1f; offsetX = 0f; offsetY = 0f })
-                                        }
-                                        .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offsetX, translationY = offsetY),
+                                            .pointerInput(Unit) {
+                                                awaitPointerEventScope {
+                                                    while (true) {
+                                                        val event = awaitPointerEvent()
+                                                        if (event.type == PointerEventType.Scroll) {
+                                                            val deltaY = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
+                                                            scale = (scale - deltaY * 0.15f).coerceIn(1f, 5f)
+                                                            if (scale <= 1f) {
+                                                                offsetX = 0f
+                                                                offsetY = 0f
+                                                            }
+                                                            event.changes.forEach { it.consume() }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            .pointerInput(Unit) {
+                                                detectTapGestures(onDoubleTap = {
+                                                    scale = 1f
+                                                    offsetX = 0f
+                                                    offsetY = 0f
+                                                })
+                                            }
+                                            .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offsetX, translationY = offsetY),
                                     loading = {
                                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -193,13 +211,13 @@ fun ImageModal(
                                                         progress = { currentProgress },
                                                         color = MaterialTheme.colorScheme.primary,
                                                         trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                                                        modifier = Modifier.size(48.dp)
+                                                        modifier = Modifier.size(48.dp),
                                                     )
                                                     Spacer(modifier = Modifier.height(8.dp))
                                                     Text(
                                                         text = "${(currentProgress * 100).toInt()}%",
                                                         color = Color.White,
-                                                        style = MaterialTheme.typography.labelLarge
+                                                        style = MaterialTheme.typography.labelLarge,
                                                     )
                                                 } else {
                                                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -211,13 +229,22 @@ fun ImageModal(
                                         Column(
                                             modifier = Modifier.fillMaxSize().clickable { retryTrigger++ },
                                             horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.Center
+                                            verticalArrangement = Arrangement.Center,
                                         ) {
-                                            Icon(TablerIcons.AlertTriangle, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp))
+                                            Icon(
+                                                TablerIcons.AlertTriangle,
+                                                null,
+                                                tint = MaterialTheme.colorScheme.error,
+                                                modifier = Modifier.size(48.dp),
+                                            )
                                             Spacer(Modifier.height(8.dp))
-                                            Text("Tap to retry", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelLarge)
+                                            Text(
+                                                "Tap to retry",
+                                                color = MaterialTheme.colorScheme.error,
+                                                style = MaterialTheme.typography.labelLarge,
+                                            )
                                         }
-                                    }
+                                    },
                                 )
                             }
                         }
@@ -229,7 +256,7 @@ fun ImageModal(
                     text = item.tag,
                     style = MaterialTheme.typography.headlineSmall,
                     color = Color.White,
-                    modifier = Modifier.padding(top = 16.dp)
+                    modifier = Modifier.padding(top = 16.dp),
                 )
             }
         }

@@ -20,15 +20,16 @@ data class ZerochanFullItem(
     val small: String? = null,
     val medium: String? = null,
     val large: String? = null,
-    val full: String? = null,    // 👈 The Holy Grail!
+    val full: String? = null,
     val width: Int? = null,
     val height: Int? = null,
-    val size: Long? = null,      // File size in bytes
+    val size: Long? = null, // File size in bytes
     val hash: String? = null,
     val source: String? = null,
     val primary: String? = null,
-    val tags: List<String> = emptyList() // 👈 Great for a future tag-viewer UI!
+    val tags: List<String> = emptyList(),
 )
+
 @Serializable
 data class ZerochanResponse(
     val items: List<ZerochanItem> = emptyList(),
@@ -68,7 +69,7 @@ data class ZerochanApiParams(
 data class ZerochanSuggestionResponse(
     val query: String,
     val language: String? = null,
-    val suggestions: List<ZerochanSuggestion> = emptyList() // Graceful fallback!
+    val suggestions: List<ZerochanSuggestion> = emptyList(), // Graceful fallback!
 )
 
 @Serializable
@@ -79,5 +80,5 @@ data class ZerochanSuggestion(
     val total: Int? = 0,
     val icon: String? = null,
     val parent: String? = null,
-    val alias: String? = null
+    val alias: String? = null,
 )
