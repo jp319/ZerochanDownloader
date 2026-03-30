@@ -30,7 +30,6 @@ import compose.icons.tablericons.CircleX
 import compose.icons.tablericons.Download
 import compose.icons.tablericons.InfoCircle
 import org.jetbrains.compose.animatedimage.AnimatedImage
-import org.jetbrains.compose.animatedimage.loadAnimatedImage
 import java.io.File
 
 @Composable

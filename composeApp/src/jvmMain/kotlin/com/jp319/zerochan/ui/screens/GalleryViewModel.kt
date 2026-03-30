@@ -172,7 +172,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
     }
 
     /**
-     * Downloads a single image. Reverts to looking for full-res urls if knownUrl is null.
+     * Downloads a single image. Reverts to looking for full-res URLs if knownUrl is null.
      */
     fun downloadSingleItem(
         item: ZerochanItem,

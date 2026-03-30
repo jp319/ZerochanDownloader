@@ -13,13 +13,13 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isPrimaryPressed
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.isPrimaryPressed
-import androidx.compose.ui.input.pointer.onPointerEvent
 import com.jp319.zerochan.ui.components.*
 import compose.icons.TablerIcons
 import compose.icons.tablericons.AlertTriangle
@@ -69,7 +69,7 @@ fun GalleryScreen(
 
     // Render the Details Dialog when active
     if (itemDetails != null || isLoadingDetails) {
-        com.jp319.zerochan.ui.components.ItemDetailsDialog(
+        ItemDetailsDialog(
             details = itemDetails,
             isLoading = isLoadingDetails,
             onDismiss = viewModel::onDismissDetails,

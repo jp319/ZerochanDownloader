@@ -98,7 +98,7 @@ fun LocalImageModal(
                         }
                     } else {
                         SubcomposeAsyncImage(
-                            // Force Coil to read the ORIGNAL massive file size from disk
+                            // Force Coil to read the ORIGINAL massive file size from disk
                             model =
                                 ImageRequest.Builder(LocalPlatformContext.current)
                                     .data(file)

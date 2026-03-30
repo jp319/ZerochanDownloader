@@ -22,8 +22,8 @@ import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import com.jp319.zerochan.utils.FileUtil
 import compose.icons.TablerIcons
-import compose.icons.tablericons.Folder
 import compose.icons.tablericons.ExternalLink
+import compose.icons.tablericons.Folder
 import compose.icons.tablericons.X
 import java.io.File
 

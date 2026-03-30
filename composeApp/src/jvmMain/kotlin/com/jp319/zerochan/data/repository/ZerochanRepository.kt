@@ -13,7 +13,6 @@ import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.utils.io.*
 import io.ktor.utils.io.jvm.javaio.*
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -29,7 +28,7 @@ class NoUsernameException : Exception("Zerochan username is required for API acc
 
 /**
  * The main data repository for interacting with Zerochan's API and scraping required assets.
- * Handles rate-limiting, error recovery, tag auto-correction, and full-resolution image discovery.
+ * Handles rate-limiting, error recovery, tag autocorrection, and full-resolution image discovery.
  */
 class ZerochanRepository(
     private val client: HttpClient,
@@ -76,7 +75,7 @@ class ZerochanRepository(
      * Includes automatic detection and recovery for Zerochan's server-side tag corrections.
      *
      * @param params The search filters and pagination details.
-     * @param isRetry Internal flag used to prevent infinite redirect loops during auto-correction.
+     * @param isRetry Internal flag used to prevent infinite redirect loops during autocorrection.
      * @return A list of items found, or empty list on failure.
      */
     suspend fun search(
@@ -108,7 +107,7 @@ class ZerochanRepository(
             val finalUrl = response.request.url
             Logger.debug(TAG, "Actual Request URL: $finalUrl")
 
-            // Auto-correction detection logic.
+            // Autocorrection detection logic.
             // If the final URL doesn't have our "json" parameter, Zerochan redirected us.
             if (!finalUrl.parameters.contains("json")) {
                 if (isRetry) {
@@ -257,7 +256,7 @@ class ZerochanRepository(
                             val currentPercent = (progress * 100).toInt()
                             if (currentPercent != lastPrintedPercent) {
                                 lastPrintedPercent = currentPercent
-                                if (currentPercent % 10 == 0 || currentPercent == 100) {
+                                if (currentPercent % 10 == 0) {
                                     Logger.debug(TAG, "Downloading $fileName: $currentPercent%")
                                 }
                             }
@@ -318,19 +317,6 @@ class ZerochanRepository(
     }
 
     /**
-     * Reads a remote file directly into a byte array.
-     */
-    suspend fun getRemoteFileBytes(url: String): ByteArray? =
-        withContext(Dispatchers.IO) {
-            try {
-                client.get(url).readBytes()
-            } catch (e: Exception) {
-                Logger.error(TAG, "Failed to read bytes for $url", e)
-                null
-            }
-        }
-
-    /**
      * Fetches a GIF and saves it to a temporary system file.
      * Caches it using the Zerochan ID to prevent redundant downloads within the session.
      */
@@ -363,7 +349,7 @@ class ZerochanRepository(
                             val currentPercent = (progress * 100).toInt()
                             if (currentPercent != lastPrintedPercent) {
                                 lastPrintedPercent = currentPercent
-                                if (currentPercent % 10 == 0 || currentPercent == 100) {
+                                if (currentPercent % 10 == 0) {
                                     Logger.debug(TAG, "Downloading GIF zerochan-$id.gif: $currentPercent%")
                                 }
                             }

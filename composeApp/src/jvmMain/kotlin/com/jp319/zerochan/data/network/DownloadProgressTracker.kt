@@ -96,7 +96,7 @@ private class ProgressResponseBody(
                     if (!url.contains("/240/") && !url.contains("/75/") && !url.contains("/avatars")) {
                         if (currentPercent != lastPrintedPercent) {
                             lastPrintedPercent = currentPercent
-                            if (currentPercent % 10 == 0 || currentPercent == 100) {
+                            if (currentPercent % 10 == 0) {
                                 Logger.debug("DownloadProgress", "Downloading: $currentPercent%")
                             }
                         }
