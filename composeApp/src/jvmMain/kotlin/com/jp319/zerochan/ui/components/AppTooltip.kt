@@ -23,18 +23,18 @@ fun AppTooltip(
                 modifier = Modifier.padding(8.dp),
                 shape = MaterialTheme.shapes.small,
                 color = MaterialTheme.colorScheme.surfaceVariant,
-                shadowElevation = 4.dp
+                shadowElevation = 4.dp,
             ) {
                 Text(
                     text = text,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
         modifier = modifier,
         delayMillis = 400,
-        content = content
+        content = content,
     )
 }

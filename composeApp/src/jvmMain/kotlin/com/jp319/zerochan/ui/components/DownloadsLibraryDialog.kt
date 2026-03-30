@@ -37,9 +37,10 @@ fun DownloadsLibraryDialog(
 ) {
     Dialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(
-            usePlatformDefaultWidth = false,
-        ),
+        properties =
+            DialogProperties(
+                usePlatformDefaultWidth = false,
+            ),
     ) {
         Surface(
             modifier = Modifier.fillMaxSize().padding(32.dp),
@@ -53,10 +54,15 @@ fun DownloadsLibraryDialog(
             val folderSize = remember(localFiles) { localFiles.sumOf { it.length() } }
 
             fun formatSize(bytes: Long): String {
-                return if (bytes < 1024) "$bytes B"
-                else if (bytes < 1024 * 1024) "${bytes / 1024} KB"
-                else if (bytes < 1024 * 1024 * 1024) String.format("%.1f MB", bytes / (1024f * 1024f))
-                else String.format("%.2f GB", bytes / (1024f * 1024f * 1024f))
+                return if (bytes < 1024) {
+                    "$bytes B"
+                } else if (bytes < 1024 * 1024) {
+                    "${bytes / 1024} KB"
+                } else if (bytes < 1024 * 1024 * 1024) {
+                    String.format("%.1f MB", bytes / (1024f * 1024f))
+                } else {
+                    String.format("%.2f GB", bytes / (1024f * 1024f * 1024f))
+                }
             }
 
             Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {
@@ -90,14 +96,20 @@ fun DownloadsLibraryDialog(
                             Text("Save Location", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                             Text(currentPath, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
                             Text(
-                                text = "Directory Usage: ${formatSize(folderSize)} • Free System Space: ${formatSize(freeSpace)} / ${formatSize(totalSpace)}",
+                                text = "Directory Usage: ${formatSize(
+                                    folderSize,
+                                )} • Free System Space: ${formatSize(freeSpace)} / ${formatSize(totalSpace)}",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                         AppTooltip(text = "Open folder in File Explorer") {
                             IconButton(onClick = { FileUtil.openFileNatively(currentDir) }) {
-                                Icon(TablerIcons.ExternalLink, contentDescription = "Open Directory in Explorer", tint = MaterialTheme.colorScheme.primary)
+                                Icon(
+                                    TablerIcons.ExternalLink,
+                                    contentDescription = "Open Directory in Explorer",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                )
                             }
                         }
                         Spacer(modifier = Modifier.width(8.dp))

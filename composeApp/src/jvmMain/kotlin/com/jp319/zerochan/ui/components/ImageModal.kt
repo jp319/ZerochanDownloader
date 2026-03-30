@@ -79,7 +79,8 @@ fun ImageModal(
                     Modifier
                         .fillMaxSize()
                         .padding(24.dp)
-                        .clickable(enabled = false) { }, // prevent click-through
+                        // prevent click-through
+                        .clickable(enabled = false) { },
             ) {
                 // Header with actions
                 Row(
@@ -155,7 +156,8 @@ fun ImageModal(
                             // Just call the component! It handles loading vs playing internally.
                             ZoomableGifViewer(
                                 animatedImage = animatedImage,
-                                progress = currentProgress, // This comes from your DownloadProgressTracker
+                                // This comes from your DownloadProgressTracker
+                                progress = currentProgress,
                             )
                         } else {
                             // Unified Progress UI for Coil Loading

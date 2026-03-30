@@ -83,7 +83,7 @@ fun GalleryScreen(
                 viewModel.onDismissModal()
                 viewModel.onQueryChange(tag)
                 viewModel.onSearch(tag)
-            }
+            },
         )
     }
 
@@ -207,26 +207,28 @@ fun GalleryScreen(
                         contentPadding = PaddingValues(16.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalItemSpacing = 12.dp,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .onPointerEvent(PointerEventType.Move, PointerEventPass.Initial) { event ->
-                                val isModeActive = isSelectionModeActive || selectedIds.isNotEmpty()
-                                if (isModeActive && event.buttons.isPrimaryPressed) {
-                                    val position = event.changes.first().position
-                                    val visibleItems = gridState.layoutInfo.visibleItemsInfo
-                                    for (itemInfo in visibleItems) {
-                                        val offset = itemInfo.offset
-                                        val size = itemInfo.size
-                                        if (position.x >= offset.x && position.x <= offset.x + size.width &&
-                                            position.y >= offset.y && position.y <= offset.y + size.height) {
-                                            val id = itemInfo.key as? Int
-                                            if (id != null) {
-                                                viewModel.selectItem(id)
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .onPointerEvent(PointerEventType.Move, PointerEventPass.Initial) { event ->
+                                    val isModeActive = isSelectionModeActive || selectedIds.isNotEmpty()
+                                    if (isModeActive && event.buttons.isPrimaryPressed) {
+                                        val position = event.changes.first().position
+                                        val visibleItems = gridState.layoutInfo.visibleItemsInfo
+                                        for (itemInfo in visibleItems) {
+                                            val offset = itemInfo.offset
+                                            val size = itemInfo.size
+                                            if (position.x >= offset.x && position.x <= offset.x + size.width &&
+                                                position.y >= offset.y && position.y <= offset.y + size.height
+                                            ) {
+                                                val id = itemInfo.key as? Int
+                                                if (id != null) {
+                                                    viewModel.selectItem(id)
+                                                }
                                             }
                                         }
                                     }
-                                }
-                            },
+                                },
                     ) {
                         items(
                             items = images,
@@ -249,7 +251,7 @@ fun GalleryScreen(
                                     }
                                 },
                                 onLongClick = { viewModel.toggleSelection(item.id) },
-                                onDragSelect = { viewModel.selectItem(item.id) }
+                                onDragSelect = { viewModel.selectItem(item.id) },
                             )
                         }
 

@@ -4,7 +4,7 @@
 
 # Zerochan Downloader
 
-**A clean, native desktop client for browsing and downloading from [Zerochan](https://www.zerochan.net/).**
+**A beautiful desktop client for [Zerochan](https://www.zerochan.net/).**
 
 Built with Kotlin & Compose Multiplatform — runs natively on Windows, Linux, and macOS.
 

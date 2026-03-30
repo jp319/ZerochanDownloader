@@ -44,7 +44,8 @@ fun SearchBar(
                         .height(40.dp),
                 // Perfect 40dp height without clipping
                 shape = MaterialTheme.shapes.extraLarge,
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f), // The background color!
+                // The background color!
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,

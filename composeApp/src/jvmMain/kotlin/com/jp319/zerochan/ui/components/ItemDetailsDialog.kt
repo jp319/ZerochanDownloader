@@ -85,7 +85,7 @@ fun ItemDetailsDialog(
                                     }
                                     DropdownMenu(
                                         expanded = expanded,
-                                        onDismissRequest = { expanded = false }
+                                        onDismissRequest = { expanded = false },
                                     ) {
                                         DropdownMenuItem(
                                             text = { Text("Search Tag") },
@@ -94,7 +94,7 @@ fun ItemDetailsDialog(
                                                 onSearchTag(tag)
                                                 onDismiss()
                                             },
-                                            leadingIcon = { Icon(TablerIcons.Search, null) }
+                                            leadingIcon = { Icon(TablerIcons.Search, null) },
                                         )
                                         DropdownMenuItem(
                                             text = { Text("Copy Tag") },
@@ -104,7 +104,7 @@ fun ItemDetailsDialog(
                                                 val selection = java.awt.datatransfer.StringSelection(tag)
                                                 clipboard.setContents(selection, null)
                                             },
-                                            leadingIcon = { Icon(TablerIcons.Copy, null) }
+                                            leadingIcon = { Icon(TablerIcons.Copy, null) },
                                         )
                                     }
                                 }

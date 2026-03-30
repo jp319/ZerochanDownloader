@@ -10,12 +10,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.WindowScope
 import com.jp319.zerochan.data.network.RequestTracker
 import com.jp319.zerochan.data.network.createHttpClient
 import com.jp319.zerochan.data.profile.ProfileManager
@@ -32,9 +34,6 @@ import org.jetbrains.compose.resources.painterResource
 import zerochan.composeapp.generated.resources.Res
 import zerochan.composeapp.generated.resources.logo
 import kotlin.time.Duration.Companion.milliseconds
-
-import androidx.compose.ui.window.WindowScope
-import androidx.compose.foundation.window.WindowDraggableArea
 
 @Composable
 @Preview
@@ -248,7 +247,7 @@ private fun MainScreen(
                 if (profileManager.isFirstLaunch) {
                     profileManager.isFirstLaunch = false
                 }
-            }
+            },
         )
     }
 

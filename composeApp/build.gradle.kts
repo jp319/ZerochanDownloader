@@ -9,6 +9,13 @@ plugins {
     alias(libs.plugins.ktlint)
 }
 
+ktlint {
+    filter {
+        exclude("**/build/**")
+        exclude("**/generated/**")
+    }
+}
+
 kotlin {
     jvm()
 
@@ -49,19 +56,24 @@ compose.desktop {
         mainClass = "com.jp319.zerochan.MainKt"
 
         buildTypes.release.proguard {
-            isEnabled = false
+            isEnabled = true
+
+            obfuscate = false
+
+            configurationFiles.from(project.file("proguard-rules.pro"))
         }
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe, TargetFormat.Rpm)
 
             jvmArgs("--enable-native-access=ALL-UNNAMED")
+            jvmArgs("--sun-misc-unsafe-memory-access=allow")
 
             packageName = "Zerochan Downloader"
             packageVersion = "1.0.1"
             vendor = "John Fritz P. Antipuesto"
             description = "A beautiful desktop client for Zerochan."
-            copyright = "© 2024 John Fritz P. Antipuesto"
+            copyright = "© 2026 John Fritz P. Antipuesto"
 
             windows {
                 shortcut = true

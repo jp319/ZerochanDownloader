@@ -70,7 +70,7 @@ fun ImageCard(
                     onClick = onClick,
                     onLongClick = onLongClick,
                 )
-                .onPointerEvent(PointerEventType.Enter) { event -> 
+                .onPointerEvent(PointerEventType.Enter) { event ->
                     isHovered = true
                     if (isSelectionModeActive && event.buttons.isPrimaryPressed) {
                         onDragSelect()

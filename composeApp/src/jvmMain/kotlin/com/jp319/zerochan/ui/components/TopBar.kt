@@ -134,7 +134,11 @@ fun TopBar(
 
             // WINDOW CONTROLS (Always Visible in Borderless Mode)
             Spacer(Modifier.width(8.dp))
-            VerticalDivider(modifier = Modifier.height(24.dp), thickness = 1.dp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+            VerticalDivider(
+                modifier = Modifier.height(24.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+            )
             Spacer(Modifier.width(8.dp))
 
             IconButton(onClick = onMinimize, modifier = Modifier.size(32.dp)) {
@@ -146,7 +150,7 @@ fun TopBar(
             IconButton(
                 onClick = onClose,
                 modifier = Modifier.size(32.dp),
-                colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant)
+                colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
             ) {
                 Icon(TablerIcons.X, contentDescription = "Close", modifier = Modifier.size(16.dp))
             }

@@ -1,0 +1,22 @@
+root = true
+
+[*.{kt,kts}]
+# 1. Allow PascalCase for @Composable functions
+ktlint_function_naming_ignore_when_annotated_with = Composable
+
+# 2. Allow wildcard imports (very common for androidx.compose.foundation.layout.*)
+ktlint_standard_no-wildcard-imports = disabled
+
+# 3. Disable max line length (Compose code naturally gets deeply nested)
+max_line_length = off
+
+# 4. Disable filename matching (so main.kt doesn't throw an error)
+ktlint_standard_filename = disabled
+
+# 5. Allow comments in argument lists
+ktlint_standard_comment-spacing = disabled
+ktlint_standard_value-argument-comment = disabled
+ktlint_standard_value-parameter-comment = disabled
+
+# 6. Allow uppercase property names outside of companion objects
+ktlint_standard_property-naming = disabled

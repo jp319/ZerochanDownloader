@@ -10,9 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun GuideDialog(
-    onDismiss: () -> Unit,
-) {
+fun GuideDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
@@ -24,26 +22,27 @@ fun GuideDialog(
         },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(end = 8.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(end = 8.dp),
             ) {
                 GuideSection(
                     title = "Getting Started",
                     content = "To use the app, simply enter your Zerochan username in Settings. No password or login is required! This authenticates your session for exploring.",
                 )
-                
+
                 GuideSection(
                     title = "Searching & Filtering",
                     content = "Use the top search bar to find images by tags (e.g. 'One Piece'). Click the filter icon to refine results by dimensions, upload time, or primary colors.",
                 )
-                
+
                 GuideSection(
                     title = "Downloading & Multi-Selection",
                     content = "You can download individual images by clicking them and hitting Download. For bulk downloads, long-press any image to enter Selection Mode. You can then quickly click, or even drag your mouse across multiple images to select them all at once!",
                 )
-                
+
                 GuideSection(
                     title = "Animated Previews",
                     content = "When previewing an animated GIF, the app automatically caches it to prevent redownloading the same animation repeatedly.",
@@ -73,7 +72,7 @@ fun GuideDialog(
                             e.printStackTrace()
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Read Zerochan API Docs")
                 }
@@ -95,7 +94,7 @@ fun GuideDialog(
 private fun GuideSection(
     title: String,
     content: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.padding(vertical = 8.dp)) {
         Text(

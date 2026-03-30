@@ -52,9 +52,10 @@ fun main() {
     }
 
     // Load via AWT — works across KDE, XFCE, GNOME, and Hyprland/Wayland
-    val iconStream = Thread.currentThread()
-        .contextClassLoader
-        .getResourceAsStream("composeResources/zerochan.composeapp.generated.resources/drawable/logo.png")
+    val iconStream =
+        Thread.currentThread()
+            .contextClassLoader
+            .getResourceAsStream("composeResources/zerochan.composeapp.generated.resources/drawable/logo.png")
     val icon = iconStream?.let { ImageIO.read(it) }
 
     // Set the icon in the AWT Toolkit for Wayland/XWayland compositors (e.g. Hyprland)
@@ -98,7 +99,7 @@ fun main() {
                         windowState.placement = androidx.compose.ui.window.WindowPlacement.Maximized
                     }
                 },
-                onClose = ::exitApplication
+                onClose = ::exitApplication,
             )
         }
     }

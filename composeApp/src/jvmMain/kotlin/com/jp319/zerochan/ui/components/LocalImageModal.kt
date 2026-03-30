@@ -93,7 +93,8 @@ fun LocalImageModal(
                         } else {
                             ZoomableGifViewer(
                                 animatedImage!!,
-                                progress = 1f, // Since it's loaded from disk, we can assume it's fully loaded
+                                // Since it's loaded from disk, we can assume it's fully loaded
+                                progress = 1f,
                             )
                         }
                     } else {
@@ -106,7 +107,8 @@ fun LocalImageModal(
                                     .build(),
                             contentDescription = file.name,
                             contentScale = ContentScale.Fit,
-                            filterQuality = FilterQuality.High, // High-quality GPU filtering
+                            // High-quality GPU filtering
+                            filterQuality = FilterQuality.High,
                             loading = {
                                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
