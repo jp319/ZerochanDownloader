@@ -67,7 +67,7 @@ fun TopBar(
                 AppLogo(size = 24.dp)
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    text = "ZeroChan Explorer",
+                    text = "Zerochan Downloader",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,

@@ -17,7 +17,7 @@ fun GuideDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Welcome to Zerochan Explorer",
+                text = "Welcome to Zerochan Downloader",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
             )

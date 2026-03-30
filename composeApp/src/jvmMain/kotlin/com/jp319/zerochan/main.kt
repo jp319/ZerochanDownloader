@@ -61,7 +61,7 @@ fun main() {
     application {
         Window(
             onCloseRequest = ::exitApplication,
-            title = "ZeroChan",
+            title = "Zerochan Downloader",
         ) {
             window.iconImage = icon
             App()

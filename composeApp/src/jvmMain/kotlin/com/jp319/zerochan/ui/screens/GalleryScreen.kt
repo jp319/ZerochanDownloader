@@ -189,7 +189,7 @@ fun GalleryScreen(
                     if (query.isEmpty()) {
                         StateMessage(
                             icon = TablerIcons.Search,
-                            title = "Zerochan Explorer",
+                            title = "Zerochan Downloader",
                             description = "Search for tags like 'One Piece' to begin.",
                         )
                     } else {

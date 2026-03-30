@@ -1,4 +1,4 @@
-# Zerochan Desktop Explorer
+# Zerochan Downloader
 
 A beautiful, robust, and dedicated cross-platform desktop application built for interacting with the Zerochan Image Board. Developed entirely in Kotlin using JetBrains Compose Multiplatform targeting the Java Virtual Machine (JVM).
 
