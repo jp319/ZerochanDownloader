@@ -49,35 +49,49 @@ Download the latest installer for your platform from the [**Releases page**](htt
 |----------------------------|-------------------------------------------|
 | Windows                    | `.exe` (standalone) or `.msi` (installer) |
 | Linux (Debian/Ubuntu/Mint) | `.deb`                                    |
-| Linux (Fedora/Arch)        | `.rpm`                                    |
+| Linux (Arch/Manjaro)       | [AUR Package](#-for-arch-linux-users-aur) |
+| Linux (Fedora/openSUSE)    | `.rpm`                                    |
 | macOS                      | `.dmg`                                    |
 
 > **Note:** No Java installation is required. All installers bundle their own JVM runtime.
 
+### For Arch Linux Users (AUR)
+Zerochan Downloader is officially available on the Arch User Repository (AUR). You can install it using your preferred AUR helper:
+```bash
+paru -S zerochan-downloader-bin
+# or
+yay -S zerochan-downloader-bin
+````
+
 ### Installation Notes & OS Warnings
+
 Because this is an independent open-source application, your operating system might flag the installer. This is normal and expected.
 
 #### For Windows Users (SmartScreen)
-Because this app is self-published and not signed with an expensive Extended Validation certificate, Windows may show a "Windows protected your PC" warning when you first run the installer. 
+
+Because this app is self-published and not signed with an expensive Extended Validation certificate, Windows may show a "Windows protected your PC" warning when you first run the installer.
+
 * To proceed, click **"More info"** and then **"Run anyway"**.
 
 #### For macOS Users (Gatekeeper)
-This application is not signed through the Apple Developer Program. When you try to open the `.dmg` or the app, macOS might say the app is from an "unidentified developer" or that it "is damaged and can't be opened."
-* **To bypass this:** Right-click (or Control-click) the app icon and select **Open**. You may need to do this twice, or go to **System Settings > Privacy & Security** and click **"Open Anyway"** next to the warning about the app. 
 
----
+This application is not signed through the Apple Developer Program. When you try to open the `.dmg` or the app, macOS might say the app is from an "unidentified developer" or that it "is damaged and can't be opened."
+
+* **To bypass this:** Right-click (or Control-click) the app icon and select **Open**. You may need to do this twice, or go to **System Settings \> Privacy & Security** and click **"Open Anyway"** next to the warning about the app.
+
+-----
 
 ## Getting Started
 
-1. Install the application using the installer for your platform.
-2. On first launch, the **Welcome Guide** will open automatically. Give it a quick read to get oriented.
-3. Open **Settings** (top-right profile icon), and enter your **Zerochan username**.  
-   _No password is needed. Your username is only used to identify your session with the Zerochan API._
-4. Use the **search bar** to find tags (e.g. `Frieren`, `One Piece`), apply filters, and start browsing!
+1.  Install the application using the installer for your platform.
+2.  On first launch, the **Welcome Guide** will open automatically. Give it a quick read to get oriented.
+3.  Open **Settings** (top-right profile icon), and enter your **Zerochan username**.  
+    *No password is needed. Your username is only used to identify your session with the Zerochan API.*
+4.  Use the **search bar** to find tags (e.g. `Frieren`, `One Piece`), apply filters, and start browsing\!
 
 For full API details, see the [Zerochan API Documentation](https://www.zerochan.net/api).
 
----
+-----
 
 ## Building from Source
 
@@ -85,13 +99,13 @@ Requires **JDK 17+** (tested on OpenJDK 24).
 
 ```bash
 # Clone the repository
-git clone https://github.com/jp319/ZerochanDownloader.git
+git clone [https://github.com/jp319/ZerochanDownloader.git](https://github.com/jp319/ZerochanDownloader.git)
 cd ZerochanDownloader
 
 # Run the development build
 ./gradlew :composeApp:run              # macOS / Linux
 .\gradlew.bat :composeApp:run          # Windows
-````
+```
 
 ### Building a release distributable
 
@@ -104,7 +118,7 @@ cd ZerochanDownloader
 
 ```bash
 ./gradlew :composeApp:packageReleaseDeb   # Debian/Ubuntu .deb
-./gradlew :composeApp:packageReleaseRpm   # Fedora/Arch .rpm
+./gradlew :composeApp:packageReleaseRpm   # Fedora/openSUSE .rpm
 ./gradlew :composeApp:packageReleaseMsi   # Windows .msi
 ./gradlew :composeApp:packageReleaseExe   # Windows standalone .exe
 ./gradlew :composeApp:packageReleaseDmg   # macOS .dmg
