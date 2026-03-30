@@ -68,8 +68,10 @@ fun DownloadsLibraryDialog(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f),
                     )
-                    IconButton(onClick = onDismiss) {
-                        Icon(TablerIcons.X, contentDescription = "Close")
+                    AppTooltip(text = "Close Library") {
+                        IconButton(onClick = onDismiss) {
+                            Icon(TablerIcons.X, contentDescription = "Close")
+                        }
                     }
                 }
 
@@ -93,12 +95,16 @@ fun DownloadsLibraryDialog(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        IconButton(onClick = { FileUtil.openFileNatively(currentDir) }) {
-                            Icon(TablerIcons.ExternalLink, contentDescription = "Open Directory in Explorer", tint = MaterialTheme.colorScheme.primary)
+                        AppTooltip(text = "Open folder in File Explorer") {
+                            IconButton(onClick = { FileUtil.openFileNatively(currentDir) }) {
+                                Icon(TablerIcons.ExternalLink, contentDescription = "Open Directory in Explorer", tint = MaterialTheme.colorScheme.primary)
+                            }
                         }
                         Spacer(modifier = Modifier.width(8.dp))
-                        Button(onClick = { FileUtil.chooseDirectory(currentPath, onChangePath) }) {
-                            Text("Change")
+                        AppTooltip(text = "Change download directory") {
+                            Button(onClick = { FileUtil.chooseDirectory(currentPath, onChangePath) }) {
+                                Text("Change")
+                            }
                         }
                     }
                 }

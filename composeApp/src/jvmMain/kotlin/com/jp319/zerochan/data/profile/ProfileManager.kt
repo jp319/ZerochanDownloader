@@ -77,11 +77,22 @@ class ProfileManager {
             prefs.flush()
         }
 
+    /**
+     * Property indicating whether the user is opening the app for the very first time.
+     */
+    var isFirstLaunch: Boolean
+        get() = prefs.getBoolean(KEY_IS_FIRST_LAUNCH, true)
+        set(value) {
+            prefs.putBoolean(KEY_IS_FIRST_LAUNCH, value)
+            prefs.flush()
+        }
+
     companion object {
         private const val KEY_USERNAME = "username"
         private const val KEY_LAST_REQUEST_PREFIX = "last_request_time"
         private const val KEY_DOWNLOAD_DIR = "download_directory"
         private const val KEY_SEARCH_HISTORY = "search_history"
         private const val KEY_THEME_PREFERENCE = "theme_preference"
+        private const val KEY_IS_FIRST_LAUNCH = "is_first_launch"
     }
 }

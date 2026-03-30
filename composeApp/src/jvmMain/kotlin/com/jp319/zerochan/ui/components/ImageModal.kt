@@ -88,30 +88,36 @@ fun ImageModal(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    FilledTonalButton(onClick = onDownload, modifier = Modifier.padding(end = 8.dp)) {
-                        Icon(TablerIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Download")
+                    AppTooltip(text = "Download original resolution image") {
+                        FilledTonalButton(onClick = onDownload, modifier = Modifier.padding(end = 8.dp)) {
+                            Icon(TablerIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Download")
+                        }
                     }
 
-                    FilledTonalButton(
-                        onClick = { onViewDetails(item.id) },
-                        modifier = Modifier.padding(end = 8.dp),
-                    ) {
-                        Icon(TablerIcons.InfoCircle, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("View Details")
+                    AppTooltip(text = "View tags, dimensions, and uploader") {
+                        FilledTonalButton(
+                            onClick = { onViewDetails(item.id) },
+                            modifier = Modifier.padding(end = 8.dp),
+                        ) {
+                            Icon(TablerIcons.InfoCircle, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("View Details")
+                        }
                     }
 
-                    IconButton(
-                        onClick = onDismiss,
-                        colors =
-                            IconButtonDefaults.iconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            ),
-                    ) {
-                        Icon(TablerIcons.CircleX, contentDescription = "Close")
+                    AppTooltip(text = "Close Preview") {
+                        IconButton(
+                            onClick = onDismiss,
+                            colors =
+                                IconButtonDefaults.iconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                ),
+                        ) {
+                            Icon(TablerIcons.CircleX, contentDescription = "Close")
+                        }
                     }
                 }
 

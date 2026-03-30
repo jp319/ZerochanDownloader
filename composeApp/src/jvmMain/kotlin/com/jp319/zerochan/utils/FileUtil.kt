@@ -37,9 +37,37 @@ object FileUtil {
         try {
             if (Desktop.isDesktopSupported()) {
                 Desktop.getDesktop().open(file)
+            } else {
+                val osName = System.getProperty("os.name").lowercase()
+                val runtime = Runtime.getRuntime()
+                when {
+                    osName.contains("win") -> runtime.exec(arrayOf("explorer", file.absolutePath))
+                    osName.contains("mac") -> runtime.exec(arrayOf("open", file.absolutePath))
+                    osName.contains("nix") || osName.contains("nux") -> runtime.exec(arrayOf("xdg-open", file.absolutePath))
+                }
             }
         } catch (e: Exception) {
             println("Failed to open file: ${e.message}")
+        }
+    }
+
+    // Opens a webpage reliably across Windows, Mac, and Linux
+    fun openWebpage(url: String) {
+        try {
+            if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                Desktop.getDesktop().browse(java.net.URI(url))
+            } else {
+                val osName = System.getProperty("os.name").lowercase()
+                val runtime = Runtime.getRuntime()
+                when {
+                    osName.contains("win") -> runtime.exec(arrayOf("rundll32", "url.dll,FileProtocolHandler", url))
+                    osName.contains("mac") -> runtime.exec(arrayOf("open", url))
+                    osName.contains("nix") || osName.contains("nux") -> runtime.exec(arrayOf("xdg-open", url))
+                    else -> println("Cannot open URL on this OS")
+                }
+            }
+        } catch (e: Exception) {
+            println("Failed to open URL: ${e.message}")
         }
     }
 }

@@ -77,10 +77,12 @@ fun ItemDetailsDialog(
                             details.tags.forEach { tag ->
                                 var expanded by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
                                 Box {
-                                    SuggestionChip(
-                                        onClick = { expanded = true },
-                                        label = { Text(tag) },
-                                    )
+                                    AppTooltip(text = "Click to search or copy tag") {
+                                        SuggestionChip(
+                                            onClick = { expanded = true },
+                                            label = { Text(tag) },
+                                        )
+                                    }
                                     DropdownMenu(
                                         expanded = expanded,
                                         onDismissRequest = { expanded = false }
@@ -116,10 +118,12 @@ fun ItemDetailsDialog(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 // Add the explicit URL Download Button
                 if (details != null) {
-                    Button(onClick = onDownload) {
-                        Icon(TablerIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("Download Original")
+                    AppTooltip(text = "Download original resolution image") {
+                        Button(onClick = onDownload) {
+                            Icon(TablerIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("Download Original")
+                        }
                     }
                 }
                 TextButton(onClick = onDismiss) { Text("Close") }

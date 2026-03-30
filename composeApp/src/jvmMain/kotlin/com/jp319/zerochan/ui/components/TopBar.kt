@@ -19,6 +19,7 @@ fun TopBar(
     onClearSelection: () -> Unit,
     onProfileClick: () -> Unit,
     onLibraryClick: () -> Unit,
+    onHelpClick: () -> Unit,
     isSelectionModeActive: Boolean,
     onToggleSelectionMode: () -> Unit,
 ) {
@@ -40,8 +41,10 @@ fun TopBar(
             // Contextual Action Bar Logic
             if (selectedCount > 0) {
                 // SELECTION MODE ACTIVE
-                IconButton(onClick = onClearSelection) {
-                    Icon(TablerIcons.X, contentDescription = "Clear Selection")
+                AppTooltip(text = "Clear Selection") {
+                    IconButton(onClick = onClearSelection) {
+                        Icon(TablerIcons.X, contentDescription = "Clear Selection")
+                    }
                 }
                 Text(
                     text = "$selectedCount selected",
@@ -49,13 +52,15 @@ fun TopBar(
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.weight(1f),
                 )
-                Button(
-                    onClick = onDownloadClick,
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                ) {
-                    Icon(TablerIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Download")
+                AppTooltip(text = "Download Selected Images") {
+                    Button(
+                        onClick = onDownloadClick,
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    ) {
+                        Icon(TablerIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Download")
+                    }
                 }
             } else {
                 // NORMAL MODE ACTIVE
@@ -69,45 +74,58 @@ fun TopBar(
                     modifier = Modifier.weight(1f),
                 )
 
-                Surface(
-                    color = counterColor.copy(alpha = 0.2f),
-                    shape = MaterialTheme.shapes.small,
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                AppTooltip(text = "API Usage / Rate Limits") {
+                    Surface(
+                        color = counterColor.copy(alpha = 0.2f),
+                        shape = MaterialTheme.shapes.small,
                     ) {
-                        Icon(
-                            TablerIcons.AlertTriangle,
-                            contentDescription = "API Usage",
-                            modifier = Modifier.size(16.dp),
-                            tint = counterColor,
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            text = "$burstCount / 60",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = counterColor,
-                            fontWeight = FontWeight.Bold,
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        ) {
+                            Icon(
+                                TablerIcons.AlertTriangle,
+                                contentDescription = "API Usage",
+                                modifier = Modifier.size(16.dp),
+                                tint = counterColor,
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = "$burstCount / 60",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = counterColor,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
                     }
                 }
 
-                IconToggleButton(
-                    checked = isSelectionModeActive,
-                    onCheckedChange = { onToggleSelectionMode() },
-                ) {
-                    Icon(
-                        imageVector = TablerIcons.CircleCheck,
-                        contentDescription = "Selection Mode",
-                        tint = if (isSelectionModeActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                AppTooltip(text = "Toggle Selection Mode") {
+                    IconToggleButton(
+                        checked = isSelectionModeActive,
+                        onCheckedChange = { onToggleSelectionMode() },
+                    ) {
+                        Icon(
+                            imageVector = TablerIcons.CircleCheck,
+                            contentDescription = "Selection Mode",
+                            tint = if (isSelectionModeActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
-                IconButton(onClick = onLibraryClick) {
-                    Icon(TablerIcons.Download, contentDescription = "Local Library", tint = MaterialTheme.colorScheme.primary)
+                AppTooltip(text = "Local Library") {
+                    IconButton(onClick = onLibraryClick) {
+                        Icon(TablerIcons.Download, contentDescription = "Local Library", tint = MaterialTheme.colorScheme.primary)
+                    }
                 }
-                IconButton(onClick = onProfileClick) {
-                    Icon(TablerIcons.User, contentDescription = "Profile Settings", tint = MaterialTheme.colorScheme.primary)
+                AppTooltip(text = "Profile Settings") {
+                    IconButton(onClick = onProfileClick) {
+                        Icon(TablerIcons.User, contentDescription = "Profile Settings", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+                AppTooltip(text = "Help & Guide") {
+                    IconButton(onClick = onHelpClick) {
+                        Icon(TablerIcons.InfoCircle, contentDescription = "Help & Guide", tint = MaterialTheme.colorScheme.primary)
+                    }
                 }
             }
         }

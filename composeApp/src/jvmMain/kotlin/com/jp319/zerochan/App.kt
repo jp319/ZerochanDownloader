@@ -208,6 +208,7 @@ private fun MainScreen(
     onThemeChange: (String) -> Unit,
 ) {
     var showProfileDialog by remember { mutableStateOf(false) }
+    var showGuideDialog by remember { mutableStateOf(profileManager.isFirstLaunch) }
     val burstCount by RequestTracker.burstCount.collectAsState()
 
     val viewModel =
@@ -223,6 +224,17 @@ private fun MainScreen(
 
     val selectedIds by viewModel.selectedIdsForDownload.collectAsState()
     val isSelectionModeActive by viewModel.isSelectionModeActive.collectAsState()
+
+    if (showGuideDialog) {
+        com.jp319.zerochan.ui.components.GuideDialog(
+            onDismiss = {
+                showGuideDialog = false
+                if (profileManager.isFirstLaunch) {
+                    profileManager.isFirstLaunch = false
+                }
+            }
+        )
+    }
 
     if (showProfileDialog) {
         ProfileDialog(
@@ -242,6 +254,7 @@ private fun MainScreen(
                 onClearSelection = viewModel::clearSelection,
                 onLibraryClick = { viewModel.toggleDownloadsModal(true) },
                 onProfileClick = { showProfileDialog = true },
+                onHelpClick = { showGuideDialog = true },
                 isSelectionModeActive = isSelectionModeActive,
                 onToggleSelectionMode = viewModel::toggleSelectionMode,
             )

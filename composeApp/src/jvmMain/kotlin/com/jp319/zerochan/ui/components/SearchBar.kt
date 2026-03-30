@@ -101,19 +101,21 @@ fun SearchBar(
 
                     // Trailing Clear Button
                     if (query.isNotEmpty()) {
-                        IconButton(
-                            onClick = {
-                                onQueryChange("")
-                                onFocusChanged(true)
-                            },
-                            modifier = Modifier.size(24.dp),
-                        ) {
-                            Icon(
-                                TablerIcons.X,
-                                contentDescription = "Clear",
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                        AppTooltip(text = "Clear Search") {
+                            IconButton(
+                                onClick = {
+                                    onQueryChange("")
+                                    onFocusChanged(true)
+                                },
+                                modifier = Modifier.size(24.dp),
+                            ) {
+                                Icon(
+                                    TablerIcons.X,
+                                    contentDescription = "Clear",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }
@@ -150,17 +152,19 @@ fun SearchBar(
             Spacer(modifier = Modifier.width(8.dp))
 
             // The Filter Toggle
-            IconButton(
-                onClick = onToggleFilters,
-                modifier = Modifier.size(40.dp),
-                colors =
-                    if (isFilterPanelVisible) {
-                        IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                    } else {
-                        IconButtonDefaults.filledTonalIconButtonColors()
-                    },
-            ) {
-                Icon(TablerIcons.AdjustmentsHorizontal, contentDescription = "Filters", modifier = Modifier.size(20.dp))
+            AppTooltip(text = "Advanced Filters") {
+                IconButton(
+                    onClick = onToggleFilters,
+                    modifier = Modifier.size(40.dp),
+                    colors =
+                        if (isFilterPanelVisible) {
+                            IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                        } else {
+                            IconButtonDefaults.filledTonalIconButtonColors()
+                        },
+                ) {
+                    Icon(TablerIcons.AdjustmentsHorizontal, contentDescription = "Filters", modifier = Modifier.size(20.dp))
+                }
             }
         }
 
