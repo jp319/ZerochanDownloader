@@ -1,0 +1,90 @@
+name: Publish to AUR
+
+# Only run this when a release is actually published (not drafted)
+on:
+  release:
+    types: [published]
+
+jobs:
+  update-aur:
+    runs-on: ubuntu-latest
+    # We run inside an Arch Linux container so we have access to makepkg
+    container: archlinux:base-devel
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: pacman -Syu --noconfirm git openssh sudo curl
+
+      - name: Extract Version
+        id: get_version
+        run: |
+          # Strip the 'v' from the release tag (e.g., 'v1.0.2' becomes '1.0.2')
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Version is $VERSION"
+
+      - name: Calculate SHA256 of the new .deb file
+        run: |
+          # Download the newly released .deb file
+          DEB_URL="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/zerochan-downloader_${VERSION}_amd64.deb"
+          curl -L -o app.deb "$DEB_URL"
+          
+          # Calculate the hash
+          SHA256=$(sha256sum app.deb | awk '{print $1}')
+          echo "SHA256=$SHA256" >> $GITHUB_ENV
+          echo "Calculated SHA256: $SHA256"
+
+      - name: Setup SSH for AUR
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          
+          # Add AUR to known hosts so it doesn't get stuck asking "Are you sure?"
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+          
+          # Configure Git to use the SSH key
+          cat <<EOF > ~/.ssh/config
+          Host aur.archlinux.org
+            IdentityFile ~/.ssh/aur
+            User aur
+          EOF
+
+      - name: Clone AUR Repository
+        run: git clone ssh://aur@aur.archlinux.org/zerochan-downloader-bin.git aur-repo
+
+      - name: Update PKGBUILD & Generate .SRCINFO
+        run: |
+          # Copy our template into the AUR repo
+          cp aur/PKGBUILD aur-repo/PKGBUILD
+          
+          cd aur-repo
+          
+          # Inject the new version and hash into the PKGBUILD
+          sed -i "s/VERSION_PLACEHOLDER/${{ env.VERSION }}/g" PKGBUILD
+          sed -i "s/SHA256_PLACEHOLDER/${{ env.SHA256 }}/g" PKGBUILD
+          
+          # makepkg refuses to run as root for security reasons.
+          # We change ownership to 'nobody' and run it as that user.
+          chown -R nobody:nobody .
+          sudo -u nobody makepkg --printsrcinfo > .SRCINFO
+
+      - name: Commit and Push to AUR
+        run: |
+          cd aur-repo
+          
+          # Setup Git user identity
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add PKGBUILD .SRCINFO
+          
+          # Only commit and push if there are actual changes
+          if ! git diff --cached --quiet; then
+            git commit -m "Automated update to v${{ env.VERSION }}"
+            git push
+          else
+            echo "No changes to commit."
+          fi
