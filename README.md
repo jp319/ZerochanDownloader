@@ -54,6 +54,17 @@ Download the latest installer for your platform from the [**Releases page**](htt
 
 > **Note:** No Java installation is required. All installers bundle their own JVM runtime.
 
+### Installation Notes & OS Warnings
+Because this is an independent open-source application, your operating system might flag the installer. This is normal and expected.
+
+#### For Windows Users (SmartScreen)
+Because this app is self-published and not signed with an expensive Extended Validation certificate, Windows may show a "Windows protected your PC" warning when you first run the installer. 
+* To proceed, click **"More info"** and then **"Run anyway"**.
+
+#### For macOS Users (Gatekeeper)
+This application is not signed through the Apple Developer Program. When you try to open the `.dmg` or the app, macOS might say the app is from an "unidentified developer" or that it "is damaged and can't be opened."
+* **To bypass this:** Right-click (or Control-click) the app icon and select **Open**. You may need to do this twice, or go to **System Settings > Privacy & Security** and click **"Open Anyway"** next to the warning about the app. 
+
 ---
 
 ## Getting Started
@@ -80,7 +91,7 @@ cd ZerochanDownloader
 # Run the development build
 ./gradlew :composeApp:run              # macOS / Linux
 .\gradlew.bat :composeApp:run          # Windows
-```
+````
 
 ### Building a release distributable
 
@@ -99,7 +110,7 @@ cd ZerochanDownloader
 ./gradlew :composeApp:packageReleaseDmg   # macOS .dmg
 ```
 
----
+-----
 
 ## Architecture
 
@@ -121,11 +132,11 @@ composeApp/src/jvmMain/kotlin/com/jp319/zerochan/
 └── main.kt             # Entry point, Compose Window setup
 ```
 
----
+-----
 
 ## Contributing
 
-Contributions, issues, and feature requests are welcome!
+Contributions, issues, and feature requests are welcome\!
 
 Before submitting a PR, please keep the following in mind:
 
@@ -134,13 +145,13 @@ Before submitting a PR, please keep the following in mind:
 - **Rate Limiting**: Do not disable the built-in 1-second request delay or User-Agent enforcement — removing these risks getting the user's IP banned from Zerochan.
 - **Code Style**: Run `./gradlew ktlintFormat` before submitting to ensure consistent formatting.
 
----
+-----
 
 ## License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License** — see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
 
----
+-----
 
 <div align="center">
 Made with care by <a href="https://github.com/jp319">John Fritz P. Antipuesto</a>
