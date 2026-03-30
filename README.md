@@ -1,66 +1,147 @@
+<div align="center">
+
+<img src="composeApp/src/commonMain/composeResources/drawable/logo.png" alt="Zerochan Downloader Logo" width="256"/>
+
 # Zerochan Downloader
 
-A beautiful, robust, and dedicated cross-platform desktop application built for interacting with the Zerochan Image Board. Developed entirely in Kotlin using JetBrains Compose Multiplatform targeting the Java Virtual Machine (JVM).
+**A clean, native desktop client for browsing and downloading from [Zerochan](https://www.zerochan.net/).**
+
+Built with Kotlin & Compose Multiplatform — runs natively on Windows, Linux, and macOS.
+
+[![Latest Release](https://img.shields.io/github/v/release/jp319/ZerochanDownloader?include_prereleases&style=flat-square&color=4c1d95)](https://github.com/jp319/ZerochanDownloader/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=flat-square)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-blue?style=flat-square)](#installation)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+
+Leave a star if you find this useful! ⭐
+
+<img src="docs/images/showcase.png" width="1920" alt="Gallery View"/>
+
+</div>
+
+---
 
 ## Features
 
-- **Blazing Fast Browsing**: Infinite scrolling staggered grid showing dynamic anime art and tags.
-- **Advanced Global Search**: Auto-correcting tag searching, dynamic dimensional / color filtering, and type-to-search history caching.
-- **Robust Networking Capabilities**: 
-  - Dynamic user-agent spoofing out of the box.
-  - Rate limiting logic to avoid server blacklisting.
-  - Deep-retry loop resolving to uncover and download true full-resolution images, safely bypassing generic Cloudflare 403s.
-- **Real-Time Downloads**: A seamless unified visual progress tracking interface powered by a custom OkHttp interceptor and Compose state management flow.
-- **Built-in File Library**: Visually view, manage, and explore downloaded images directly within the app natively.
-- **GIF Optimization**: Handles animated previews without hanging up network pipelines by offloading fetching and decoding to local temporary caches.
+- **Infinite Gallery Browsing** — Staggered grid with smooth infinite scroll
+- **Smart Tag Search** — Auto-complete suggestions, recent search history, and advanced filters (dimensions, color, upload time, strict mode)
+- **Full-Resolution Downloads** — Deep retry logic to fetch the true original image, bypassing generic CDN 403s
+- **Bulk Multi-Select** — Long-press any image to enter Selection Mode. Click or drag your mouse across multiple images to select them all at once
+- **Built-in Library** — View, manage, and open downloaded images and their folder directly from within the app
+- **Animated GIF Support** — Previews animated images with local caching to avoid redundant downloads
+- **Theming** — Multiple accent color themes (Orange, Purple, Pink, Green, Red, Yellow, Cyan)
+- **No Login Required** — Uses your Zerochan username for API authentication only. No password ever needed
+- **Rate Limiting** — Automatic per-minute request tracking to respect Zerochan's API limits
 
-## Technologies Used
+---
 
-- **UI Framework**: [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/) (Declarative UI structure)
-- **Language**: [Kotlin](https://kotlinlang.org/) (JVM Target)
-- **Networking**: [Ktor Client](https://ktor.io/docs/client.html) running the [OkHttp](https://square.github.io/okhttp/) engine for advanced raw socket management.
-- **Image Processing/Caching**: [Coil3 Compose](https://coil-kt.github.io/coil/)
-- **Serialization**: `kotlinx.serialization`
-- **Linting & Best Practices**: Built-in JVM styling utilizing `ktlint`.
+## Powered by the Zerochan API
+
+This application is built entirely on top of the [Zerochan public API](https://www.zerochan.net/api), which is remarkably fast, well-structured, and reliable for a community-run image board. The API provides rich metadata per image including tags, dimensions, file size, and source, all with consistent response times. If you are a developer interested in building on top of Zerochan, their API documentation is well worth reading.
+
+---
+
+## Installation
+
+Download the latest installer for your platform from the [**Releases page**](https://github.com/jp319/ZerochanDownloader/releases).
+
+| Platform                   | Installer                                 |
+|----------------------------|-------------------------------------------|
+| Windows                    | `.exe` (standalone) or `.msi` (installer) |
+| Linux (Debian/Ubuntu/Mint) | `.deb`                                    |
+| Linux (Fedora/Arch)        | `.rpm`                                    |
+| macOS                      | `.dmg`                                    |
+
+> **Note:** No Java installation is required. All installers bundle their own JVM runtime.
+
+---
+
+## Getting Started
+
+1. Install the application using the installer for your platform.
+2. On first launch, the **Welcome Guide** will open automatically. Give it a quick read to get oriented.
+3. Open **Settings** (top-right profile icon), and enter your **Zerochan username**.  
+   _No password is needed. Your username is only used to identify your session with the Zerochan API._
+4. Use the **search bar** to find tags (e.g. `Frieren`, `One Piece`), apply filters, and start browsing!
+
+For full API details, see the [Zerochan API Documentation](https://www.zerochan.net/api).
+
+---
+
+## Building from Source
+
+Requires **JDK 17+** (tested on OpenJDK 24).
+
+```bash
+# Clone the repository
+git clone https://github.com/jp319/ZerochanDownloader.git
+cd ZerochanDownloader
+
+# Run the development build
+./gradlew :composeApp:run              # macOS / Linux
+.\gradlew.bat :composeApp:run          # Windows
+```
+
+### Building a release distributable
+
+```bash
+./gradlew :composeApp:createReleaseDistributable
+# Output: composeApp/build/compose/binaries/main-release/app/
+```
+
+### Building platform installers
+
+```bash
+./gradlew :composeApp:packageReleaseDeb   # Debian/Ubuntu .deb
+./gradlew :composeApp:packageReleaseRpm   # Fedora/Arch .rpm
+./gradlew :composeApp:packageReleaseMsi   # Windows .msi
+./gradlew :composeApp:packageReleaseExe   # Windows standalone .exe
+./gradlew :composeApp:packageReleaseDmg   # macOS .dmg
+```
+
+---
 
 ## Architecture
 
-This project strictly follows the **MVVM (Model-View-ViewModel)** architectural pattern. 
+This project follows the **MVVM** architectural pattern.
 
-### Presentation/View Layer
-Located in `composeApp/src/jvmMain/kotlin/com/jp319/zerochan/ui/`.
-Stateless discrete UI components (`ImageCard`, `SearchBar`, `FilterPanel`) subscribe to unidirectional flows emitted globally from the `GalleryScreen`, maximizing UI reusability. 
-
-### ViewModel Layer
-`GalleryViewModel` is the sole source of truth dictating UI state. It handles pagination indices, asynchronous job queue scopes (such as downloading), and state validation natively.
-
-### Data Layer
-Located in `composeApp/src/jvmMain/kotlin/com/jp319/zerochan/data/`.
-Encapsulates `ZerochanRepository` for centralized Ktor usage, mapping domain properties to generic standard Data Classes (`ZerochanItem`), and abstracting persistent preferences via `ProfileManager`. A custom logger (`com.jp319.zerochan.utils.Logger`) standardizes formatted logging.
-
-## Setup & Execution
-
-To download and run the development instance natively on your target platform:
-
-1. Validate you have JDK 17+ configured locally.
-2. Ensure you have cloned the repository.
-3. Use Gradle to trigger the standard runtime:
-
-### On macOS / Linux
-```bash
-./gradlew :composeApp:run
+```
+composeApp/src/jvmMain/kotlin/com/jp319/zerochan/
+├── data/
+│   ├── model/          # Domain data classes (ZerochanItem, ZerochanApiParams)
+│   ├── network/        # Ktor HTTP client, request interceptors, rate limiter
+│   ├── profile/        # ProfileManager — persistent settings via Java Preferences
+│   └── repository/     # ZerochanRepository — API calls & full-res image resolution
+├── ui/
+│   ├── components/     # Reusable Composables (TopBar, SearchBar, ImageModal, etc.)
+│   ├── screens/        # GalleryScreen + GalleryViewModel
+│   └── theme/          # AppTheme, color palettes
+├── utils/              # Logger, FileUtil (cross-platform URL/folder opening)
+├── App.kt              # Root composable, splash screen, profile dialog
+└── main.kt             # Entry point, Compose Window setup
 ```
 
-### On Windows
-```cmd
-.\gradlew.bat :composeApp:run
-```
+---
 
-> [!NOTE] 
-> The application uses **ktlint** for code standardization. Running `./gradlew ktlintCheck` verifies files, and `./gradlew ktlintFormat` resolves syntactical mismatches automatically.
+## Contributing
 
-## Maintenance & Contribution
+Contributions, issues, and feature requests are welcome!
 
-1. **Clean Logging**: Only use `Logger.info(...)`, `Logger.debug(...)`, or `Logger.error(...)`. Direct `println()` calls or log emojis are discouraged for consistency.
-2. **KDoc Guidelines**: Provide descriptive block-level KDocs above core interfaces, models, and significant public repository bindings.
-3. **Safety Handling**: Be advised that network requests depend heavily on enforcing a 1-second delay and a strict customized User-Agent derived from `ProfileManager`; disabling these risks zerochan IP bans.
+Before submitting a PR, please keep the following in mind:
+
+- **Logging**: Use `Logger.info(...)`, `Logger.debug(...)`, or `Logger.error(...)`. Avoid raw `println()` calls.
+- **KDoc**: Add KDoc comments above core interfaces, models, and public repository methods.
+- **Rate Limiting**: Do not disable the built-in 1-second request delay or User-Agent enforcement — removing these risks getting the user's IP banned from Zerochan.
+- **Code Style**: Run `./gradlew ktlintFormat` before submitting to ensure consistent formatting.
+
+---
+
+## License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+<div align="center">
+Made with care by <a href="https://github.com/jp319">John Fritz P. Antipuesto</a>
+</div>
