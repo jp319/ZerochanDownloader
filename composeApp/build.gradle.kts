@@ -39,6 +39,7 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
             implementation(libs.compose.components.animatedImage)
+            implementation(libs.slf4j.simple)
         }
     }
 }
@@ -53,6 +54,9 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe, TargetFormat.Rpm)
+
+            jvmArgs("--enable-native-access=ALL-UNNAMED")
+
             packageName = "Zerochan Downloader"
             packageVersion = "1.0.1"
             vendor = "John Fritz P. Antipuesto"
