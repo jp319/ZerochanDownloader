@@ -47,8 +47,12 @@ compose.desktop {
     application {
         mainClass = "com.jp319.zerochan.MainKt"
 
+        buildTypes.release.proguard {
+            isEnabled = false
+        }
+
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Exe, TargetFormat.Rpm)
             packageName = "com.jp319.zerochan"
             packageVersion = "1.0.0"
         }
