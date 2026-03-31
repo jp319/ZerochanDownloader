@@ -21,19 +21,14 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '24'
+          cache: 'gradle' # Simple, reliable caching
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Extract Version
+      - name: Grant Execute Permission for Gradle
+        run: chmod +x gradlew
         shell: bash
-        run: |
-          VERSION="${{ github.ref_name }}"
-          echo "APP_VERSION=${VERSION#v}" >> $GITHUB_ENV
 
       - name: Build Windows Executable (.exe) and Installer (.msi)
-        # Passing the version to Gradle via -PappVersion
-        run: ./gradlew :composeApp:packageReleaseExe :composeApp:packageReleaseMsi -PappVersion=${{ env.APP_VERSION }} --no-daemon --build-cache
+        run: ./gradlew :composeApp:packageReleaseExe :composeApp:packageReleaseMsi
         shell: bash
 
       - name: Upload to GitHub Release
@@ -57,22 +52,16 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '24'
+          cache: 'gradle'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Extract Version
-        shell: bash
-        run: |
-          VERSION="${{ github.ref_name }}"
-          echo "APP_VERSION=${VERSION#v}" >> $GITHUB_ENV
+      - name: Grant Execute Permission for Gradle
+        run: chmod +x gradlew
 
       - name: Install fakeroot and dpkg
         run: sudo apt-get update && sudo apt-get install -y fakeroot dpkg rpm
 
       - name: Build Linux Packages (.deb and .rpm)
-        # Passing the version to Gradle via -PappVersion
-        run: ./gradlew :composeApp:packageReleaseDeb :composeApp:packageReleaseRpm -PappVersion=${{ env.APP_VERSION }} --no-daemon --build-cache
+        run: ./gradlew :composeApp:packageReleaseDeb :composeApp:packageReleaseRpm
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
@@ -104,19 +93,13 @@ jobs:
         with:
           distribution: 'zulu'
           java-version: '24'
+          cache: 'gradle'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Extract Version
-        shell: bash
-        run: |
-          VERSION="${{ github.ref_name }}"
-          echo "APP_VERSION=${VERSION#v}" >> $GITHUB_ENV
+      - name: Grant Execute Permission for Gradle
+        run: chmod +x gradlew
 
       - name: Build macOS Installer (.dmg)
-        # Passing the version to Gradle via -PappVersion
-        run: ./gradlew :composeApp:packageReleaseDmg -PappVersion=${{ env.APP_VERSION }} --no-daemon --build-cache
+        run: ./gradlew :composeApp:packageReleaseDmg
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2

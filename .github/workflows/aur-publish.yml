@@ -70,19 +70,21 @@ jobs:
       - name: Setup SSH for AUR
         run: |
           mkdir -p ~/.ssh
-          # Support both secret passing methods
-          AUR_KEY="${{ secrets.AUR_SSH_PRIVATE_KEY || secrets.AUR_SSH_PRIVATE_KEY }}"
+          
+          # Read the secret into the file
+          AUR_KEY="${{ secrets.AUR_SSH_PRIVATE_KEY }}"
           echo "$AUR_KEY" > ~/.ssh/aur
           chmod 600 ~/.ssh/aur
           
-          # Add AUR to known hosts so it doesn't get stuck asking "Are you sure?"
+          # Scan the host key just in case
           ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
           
-          # Configure Git to use the SSH key
+          # Configure Git to use the SSH key and explicitly disable Strict Host Checking
           cat <<EOF > ~/.ssh/config
           Host aur.archlinux.org
             IdentityFile ~/.ssh/aur
             User aur
+            StrictHostKeyChecking no
           EOF
 
       - name: Clone AUR Repository
