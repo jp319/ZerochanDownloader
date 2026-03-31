@@ -167,7 +167,11 @@ fun ProfileDialog(
                             modifier =
                                 Modifier
                                     .size(32.dp)
-                                    .clickable { tempTheme = themeName },
+                                    .clickable {
+                                        tempTheme = themeName
+                                        // Apply theme immediately
+                                        onThemeChange(themeName)
+                                    },
                             border =
                                 if (isSelected) {
                                     BorderStroke(
@@ -226,6 +230,8 @@ private fun MainScreen(
     var showGuideDialog by remember { mutableStateOf(profileManager.isFirstLaunch) }
     val burstCount by RequestTracker.burstCount.collectAsState()
 
+    val (zoomLevel, setZoomLevel) = remember { mutableStateOf(1f) }
+
     val viewModel =
         remember {
             GalleryViewModel(
@@ -273,6 +279,10 @@ private fun MainScreen(
                     onHelpClick = { showGuideDialog = true },
                     isSelectionModeActive = isSelectionModeActive,
                     onToggleSelectionMode = viewModel::toggleSelectionMode,
+                    zoomLevel = zoomLevel,
+                    onZoomIn = { setZoomLevel((zoomLevel + 0.1f).coerceIn(0.5f, 10f)) },
+                    onZoomOut = { setZoomLevel((zoomLevel - 0.1f).coerceIn(0.5f, 10f)) },
+                    onZoomReset = { setZoomLevel(1f) },
                     onMinimize = onMinimize,
                     onMaximizeToggle = onMaximizeToggle,
                     onClose = onClose,
@@ -288,6 +298,8 @@ private fun MainScreen(
     ) { innerPadding ->
         GalleryScreen(
             viewModel = viewModel,
+            zoomLevel = zoomLevel,
+            onZoomChange = setZoomLevel,
             modifier = Modifier.padding(innerPadding),
         )
     }

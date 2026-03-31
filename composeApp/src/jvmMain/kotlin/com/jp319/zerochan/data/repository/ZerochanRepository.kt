@@ -35,7 +35,7 @@ class ZerochanRepository(
     val profileManager: ProfileManager,
 ) {
     private val baseUrl = "https://www.zerochan.net"
-    private val TAG = "ZerochanRepository"
+    private val logTAG = "ZerochanRepository"
 
     init {
         kotlinx.coroutines.CoroutineScope(Dispatchers.IO).launch {
@@ -44,10 +44,10 @@ class ZerochanRepository(
                 val files = tempDir.listFiles { _, name -> name.startsWith("zerochan-") && name.endsWith(".gif") }
                 files?.forEach { it.delete() }
                 if (!files.isNullOrEmpty()) {
-                    Logger.info(TAG, "Cleaned up ${files.size} cached zerochan-*.gif files on startup.")
+                    Logger.info(logTAG, "Cleaned up ${files.size} cached zerochan-*.gif files on startup.")
                 }
             } catch (e: Exception) {
-                Logger.error(TAG, "Failed to clean up temp GIFs", e)
+                Logger.error(logTAG, "Failed to clean up temp GIFs", e)
             }
         }
     }
@@ -84,7 +84,7 @@ class ZerochanRepository(
     ): List<ZerochanItem> {
         RequestTracker.recordRequest()
         checkRateLimit()
-        Logger.debug(TAG, "Searching with params: $params (Retry: $isRetry)")
+        Logger.debug(logTAG, "Searching with params: $params (Retry: $isRetry)")
 
         return try {
             val response: HttpResponse =
@@ -105,13 +105,13 @@ class ZerochanRepository(
                 }
 
             val finalUrl = response.request.url
-            Logger.debug(TAG, "Actual Request URL: $finalUrl")
+            Logger.debug(logTAG, "Actual Request URL: $finalUrl")
 
             // Autocorrection detection logic.
             // If the final URL doesn't have our "json" parameter, Zerochan redirected us.
             if (!finalUrl.parameters.contains("json")) {
                 if (isRetry) {
-                    Logger.warn(TAG, "Prevented an infinite redirect loop. Bailing out.")
+                    Logger.warn(logTAG, "Prevented an infinite redirect loop. Bailing out.")
                     return emptyList()
                 }
 
@@ -119,7 +119,7 @@ class ZerochanRepository(
                 val correctedTag = finalUrl.rawSegments.lastOrNull()
 
                 if (!correctedTag.isNullOrBlank()) {
-                    Logger.info(TAG, "Zerochan auto-corrected tag to: $correctedTag. Retrying request...")
+                    Logger.info(logTAG, "Zerochan auto-corrected tag to: $correctedTag. Retrying request...")
 
                     // Copy our original params but inject the newly discovered tag
                     val correctedParams = params.copy(tag = correctedTag)
@@ -130,7 +130,7 @@ class ZerochanRepository(
             }
 
             if (!response.status.isSuccess()) {
-                Logger.error(TAG, "Search failed with status: ${response.status}")
+                Logger.error(logTAG, "Search failed with status: ${response.status}")
                 return emptyList()
             }
 
@@ -139,7 +139,7 @@ class ZerochanRepository(
         } catch (e: NoUsernameException) {
             throw e
         } catch (e: Exception) {
-            Logger.error(TAG, "Error fetching or parsing search results", e)
+            Logger.error(logTAG, "Error fetching or parsing search results", e)
             emptyList()
         }
     }
@@ -158,7 +158,7 @@ class ZerochanRepository(
                 }
 
             if (!response.status.isSuccess()) {
-                Logger.error(TAG, "Failed to fetch item $id. Status: ${response.status}")
+                Logger.error(logTAG, "Failed to fetch item $id. Status: ${response.status}")
                 return null
             }
 
@@ -166,7 +166,7 @@ class ZerochanRepository(
         } catch (e: NoUsernameException) {
             throw e
         } catch (e: Exception) {
-            Logger.error(TAG, "Error fetching item $id", e)
+            Logger.error(logTAG, "Error fetching item $id", e)
             null
         }
     }
@@ -187,7 +187,7 @@ class ZerochanRepository(
         val staticBaseUrl = "https://static.zerochan.net/$formattedTag.full.$id."
         val extensions = listOf("jpg", "png", "jpeg", "gif")
 
-        Logger.debug(TAG, "Attempting to find full-res image for ID: $id with tag: '$tag'")
+        Logger.debug(logTAG, "Attempting to find full-res image for ID: $id with tag: '$tag'")
 
         for (ext in extensions) {
             val urlToTest = "$staticBaseUrl$ext"
@@ -212,17 +212,17 @@ class ZerochanRepository(
                             "Unknown Size"
                         }
 
-                    Logger.info(TAG, "Found valid full-res image: $urlToTest ($sizeString)")
+                    Logger.info(logTAG, "Found valid full-res image: $urlToTest ($sizeString)")
                     return urlToTest
                 } else {
-                    Logger.debug(TAG, "Tested $ext - Rejected with status: ${response.status}")
+                    Logger.debug(logTAG, "Tested $ext - Rejected with status: ${response.status}")
                 }
             } catch (e: Exception) {
-                Logger.error(TAG, "Network error testing extension $ext", e)
+                Logger.error(logTAG, "Network error testing extension $ext", e)
             }
         }
 
-        Logger.warn(TAG, "Could not find a full-res match for ID $id.")
+        Logger.warn(logTAG, "Could not find a full-res match for ID $id.")
         return null
     }
 
@@ -257,7 +257,7 @@ class ZerochanRepository(
                             if (currentPercent != lastPrintedPercent) {
                                 lastPrintedPercent = currentPercent
                                 if (currentPercent % 10 == 0) {
-                                    Logger.debug(TAG, "Downloading $fileName: $currentPercent%")
+                                    Logger.debug(logTAG, "Downloading $fileName: $currentPercent%")
                                 }
                             }
                         }
@@ -269,10 +269,10 @@ class ZerochanRepository(
                     }
                 }
 
-                Logger.info(TAG, "Successfully saved: ${targetFile.absolutePath}")
+                Logger.info(logTAG, "Successfully saved: ${targetFile.absolutePath}")
                 return@withContext targetFile
             } catch (e: Exception) {
-                Logger.error(TAG, "Failed to download $fileName", e)
+                Logger.error(logTAG, "Failed to download $fileName", e)
                 return@withContext null
             }
         }
@@ -288,7 +288,7 @@ class ZerochanRepository(
         if (safeQuery.isBlank()) return emptyList()
 
         if (suggestionCache.containsKey(safeQuery)) {
-            Logger.debug(TAG, "Cache Hit for suggestions: $safeQuery")
+            Logger.debug(logTAG, "Cache Hit for suggestions: $safeQuery")
             return suggestionCache[safeQuery]!!
         }
 
@@ -311,7 +311,7 @@ class ZerochanRepository(
             }
         } catch (e: Exception) {
             if (e is CancellationException) throw e
-            Logger.error(TAG, "Failed to fetch suggestions", e)
+            Logger.error(logTAG, "Failed to fetch suggestions", e)
             emptyList()
         }
     }
@@ -330,7 +330,7 @@ class ZerochanRepository(
                 val tempFile = File(tempDir, "zerochan-$id.gif")
 
                 if (tempFile.exists() && tempFile.length() > 0) {
-                    Logger.debug(TAG, "Using cached GIF from: ${tempFile.absolutePath}")
+                    Logger.debug(logTAG, "Using cached GIF from: ${tempFile.absolutePath}")
                     return@withContext tempFile
                 }
 
@@ -350,7 +350,7 @@ class ZerochanRepository(
                             if (currentPercent != lastPrintedPercent) {
                                 lastPrintedPercent = currentPercent
                                 if (currentPercent % 10 == 0) {
-                                    Logger.debug(TAG, "Downloading GIF zerochan-$id.gif: $currentPercent%")
+                                    Logger.debug(logTAG, "Downloading GIF zerochan-$id.gif: $currentPercent%")
                                 }
                             }
                         }
@@ -362,10 +362,10 @@ class ZerochanRepository(
                     }
                 }
 
-                Logger.debug(TAG, "Saved temp GIF to: ${tempFile.absolutePath}")
+                Logger.debug(logTAG, "Saved temp GIF to: ${tempFile.absolutePath}")
                 tempFile
             } catch (e: Exception) {
-                Logger.error(TAG, "Failed to fetch remote GIF file", e)
+                Logger.error(logTAG, "Failed to fetch remote GIF file", e)
                 null
             }
         }

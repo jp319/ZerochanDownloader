@@ -1,14 +1,21 @@
 package com.jp319.zerochan.ui.components
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -33,7 +40,6 @@ fun DownloadQueuePanel(
 ) {
     if (queue.isEmpty()) return
 
-    // Collect the global OkHttp progress map
     val progressMap by DownloadProgressTracker.progress.collectAsState()
 
     Card(
@@ -42,7 +48,6 @@ fun DownloadQueuePanel(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth().padding(12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -55,12 +60,9 @@ fun DownloadQueuePanel(
             }
 
             HorizontalDivider(
-                Modifier,
-                DividerDefaults.Thickness,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
             )
 
-            // The List of Jobs
             LazyColumn(
                 modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp),
                 contentPadding = PaddingValues(8.dp),
@@ -79,89 +81,101 @@ private fun DownloadRow(
     job: DownloadJob,
     progressMap: Map<String, Float>,
 ) {
-    Surface(
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.surface,
-        modifier = Modifier.fillMaxWidth(),
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { isVisible = true }
+
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+        exit = shrinkVertically() + fadeOut()
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Surface(
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            tonalElevation = 2.dp
         ) {
-            // Thumbnail
-            AsyncImage(
-                model = job.item.thumbnail.replace(".avif", ".jpg"),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.size(48.dp).clip(RoundedCornerShape(6.dp)).background(Color.DarkGray),
-            )
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            // Text & Progress
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = job.item.tag,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                AsyncImage(
+                    model = job.item.thumbnail.replace(".avif", ".jpg"),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(48.dp).clip(RoundedCornerShape(6.dp)).background(Color.DarkGray),
                 )
-                Spacer(modifier = Modifier.height(4.dp))
 
-                when (job.state) {
-                    DownloadState.PREPARING ->
-                        Text(
-                            "Finding high-res...",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    DownloadState.SUCCESS -> Text("Complete", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50))
-                    DownloadState.ERROR ->
-                        Text(
-                            "Failed",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    DownloadState.DOWNLOADING -> {
-                        // Look up the live progress using the resolved URL!
-                        val progress = job.resolvedUrl?.let { progressMap[it] } ?: 0f
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            LinearProgressIndicator(
-                                progress = { progress },
-                                modifier = Modifier.weight(1f).height(4.dp),
-                                color = MaterialTheme.colorScheme.primary,
-                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = job.item.tag.split(", ").firstOrNull() ?: "Untitled",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    when (job.state) {
+                        DownloadState.PREPARING ->
+                            Text(
+                                "Finding high-res...",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("${(progress * 100).toInt()}%", style = MaterialTheme.typography.labelSmall)
+                        DownloadState.SUCCESS -> 
+                            Text("Complete", style = MaterialTheme.typography.labelSmall, color = Color(0xFF4CAF50))
+                        DownloadState.ERROR ->
+                            Text(
+                                "Failed",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        DownloadState.DOWNLOADING -> {
+                            val targetProgress = job.resolvedUrl?.let { progressMap[it] } ?: 0f
+                            val animatedProgress by animateFloatAsState(
+                                targetValue = targetProgress,
+                                animationSpec = spring(dampingRatio = 0.8f, stiffness = 100f)
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                LinearProgressIndicator(
+                                    progress = { animatedProgress },
+                                    modifier = Modifier.weight(1f).height(6.dp).clip(CircleShape),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("${(targetProgress * 100).toInt()}%", style = MaterialTheme.typography.labelSmall)
+                            }
                         }
                     }
                 }
-            }
 
-            // Status Icons
-            Spacer(modifier = Modifier.width(8.dp))
-            when (job.state) {
-                DownloadState.SUCCESS ->
-                    Icon(
-                        TablerIcons.Check,
-                        contentDescription = null,
-                        tint = Color(0xFF4CAF50),
-                        modifier = Modifier.size(20.dp),
-                    )
-                DownloadState.ERROR ->
-                    Icon(
-                        TablerIcons.AlertTriangle,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp),
-                    )
-                DownloadState.PREPARING, DownloadState.DOWNLOADING ->
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                    )
+                Spacer(modifier = Modifier.width(8.dp))
+                
+                when (job.state) {
+                    DownloadState.SUCCESS ->
+                        Icon(
+                            TablerIcons.Check,
+                            contentDescription = null,
+                            tint = Color(0xFF4CAF50),
+                            modifier = Modifier.size(20.dp),
+                        )
+                    DownloadState.ERROR ->
+                        Icon(
+                            TablerIcons.AlertTriangle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    DownloadState.PREPARING, DownloadState.DOWNLOADING ->
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                        )
+                }
             }
         }
     }

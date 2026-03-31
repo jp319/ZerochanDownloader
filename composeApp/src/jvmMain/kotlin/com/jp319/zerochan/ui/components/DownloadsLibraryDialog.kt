@@ -48,9 +48,15 @@ fun DownloadsLibraryDialog(
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 8.dp,
         ) {
-            val currentDir = remember(currentPath) { File(currentPath) }
-            val totalSpace = remember(currentDir) { currentDir.totalSpace }
-            val freeSpace = remember(currentDir) { currentDir.usableSpace }
+            val currentDir =
+                remember(currentPath) {
+                    File(currentPath).apply { if (!exists()) mkdirs() }
+                }
+            val fileStore = remember(currentDir) { 
+                runCatching { java.nio.file.Files.getFileStore(currentDir.toPath()) }.getOrNull()
+            }
+            val totalSpace = remember(fileStore) { fileStore?.totalSpace ?: 0L }
+            val freeSpace = remember(fileStore) { fileStore?.usableSpace ?: 0L }
             val folderSize = remember(localFiles) { localFiles.sumOf { it.length() } }
 
             fun formatSize(bytes: Long): String {

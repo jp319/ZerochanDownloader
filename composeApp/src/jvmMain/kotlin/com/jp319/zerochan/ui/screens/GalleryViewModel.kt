@@ -22,12 +22,12 @@ data class DownloadJob(
 )
 
 /**
- * ViewModel managing the primary stated, logic, and user interactions for the Gallery.
+ * ViewModel managing the primary state, logic, and user interactions for the Gallery.
  * Acts as the bridge between the Zerochan UI and the data repository.
  */
 class GalleryViewModel(private val repository: ZerochanRepository) {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    private val TAG = "GalleryViewModel"
+    private val logTAG = "GalleryViewModel"
 
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
@@ -77,7 +77,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         get() = repository.profileManager.downloadDirectory
 
     private val _isSelectionModeActive = MutableStateFlow(false)
-    val isSelectionModeActive = _isSelectionModeActive.asStateFlow()
+    val isSelectionModeActive: StateFlow<Boolean> = _isSelectionModeActive.asStateFlow()
 
     private val _isFilterPanelVisible = MutableStateFlow(false)
     val isFilterPanelVisible = _isFilterPanelVisible.asStateFlow()
@@ -97,8 +97,32 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
     private val _strictMode = MutableStateFlow(false)
     val strictMode = _strictMode.asStateFlow()
 
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching: StateFlow<Boolean> = _isSearching.asStateFlow()
+
+    private val _viewingLocalFile = MutableStateFlow<File?>(null)
+    val viewingLocalFile = _viewingLocalFile.asStateFlow()
+
+    private val _suggestions = MutableStateFlow<List<ZerochanSuggestion>>(emptyList())
+    val suggestions: StateFlow<List<ZerochanSuggestion>> = _suggestions.asStateFlow()
+
+    private var searchJob: Job? = null
+
+    // --- Drag-to-select tracking ---
+    private var isDragging = false
+    private var dragInitialStateIsSelect = true // true = selecting, false = deselecting
+    private val draggedIdsInCurrentSession = mutableSetOf<Int>()
+
+    // -------------------------------------------------------------------------
+    // Filter Panel
+    // -------------------------------------------------------------------------
+
+    fun hideFilterPanel() {
+        _isFilterPanelVisible.value = false
+    }
+
     fun toggleFilterPanel() {
-        _isFilterPanelVisible.update { !it }
+        _isFilterPanelVisible.value = !isFilterPanelVisible.value
     }
 
     fun setSortOrder(sort: SortOrder?) {
@@ -148,6 +172,10 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         )
     }
 
+    // -------------------------------------------------------------------------
+    // Selection Mode
+    // -------------------------------------------------------------------------
+
     fun toggleSelectionMode() {
         _isSelectionModeActive.update { !it }
         if (!_isSelectionModeActive.value) {
@@ -155,13 +183,39 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         }
     }
 
-    private val _viewingLocalFile = MutableStateFlow<File?>(null)
-    val viewingLocalFile = _viewingLocalFile.asStateFlow()
+    fun toggleSelection(id: Int) {
+        _selectedIdsForDownload.update { current ->
+            if (current.contains(id)) current - id else current + id
+        }
+    }
 
-    private val _suggestions = MutableStateFlow<List<ZerochanSuggestion>>(emptyList())
-    val suggestions: StateFlow<List<ZerochanSuggestion>> = _suggestions.asStateFlow()
+    fun startDragSelection(id: Int) {
+        isDragging = true
+        draggedIdsInCurrentSession.clear()
+        dragInitialStateIsSelect = !_selectedIdsForDownload.value.contains(id)
+        updateDragSelection(id)
+    }
 
-    private var searchJob: Job? = null
+    fun updateDragSelection(id: Int) {
+        if (!isDragging || draggedIdsInCurrentSession.contains(id)) return
+        draggedIdsInCurrentSession.add(id)
+        _selectedIdsForDownload.update { current ->
+            if (dragInitialStateIsSelect) current + id else current - id
+        }
+    }
+
+    fun endDragSelection() {
+        isDragging = false
+        draggedIdsInCurrentSession.clear()
+    }
+
+    fun clearSelection() {
+        _selectedIdsForDownload.update { emptySet() }
+    }
+
+    // -------------------------------------------------------------------------
+    // Local Files / Library
+    // -------------------------------------------------------------------------
 
     fun openLocalFile(file: File) {
         _viewingLocalFile.value = file
@@ -171,52 +225,6 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         _viewingLocalFile.value = null
     }
 
-    /**
-     * Downloads a single image. Reverts to looking for full-res URLs if knownUrl is null.
-     */
-    fun downloadSingleItem(
-        item: ZerochanItem,
-        knownUrl: String? = null,
-    ) {
-        val job = DownloadJob(item, knownUrl)
-        _downloadQueue.update { current -> current + job }
-
-        scope.launch {
-            // Sanitize the knownUrl to prevent Ktor localhost crashes
-            val sanitizedUrl =
-                knownUrl?.let { url ->
-                    when {
-                        url.isBlank() -> null
-                        url.startsWith("//") -> "https:$url"
-                        url.startsWith("/") -> null // Ignore relative paths, force finding the real link
-                        else -> url
-                    }
-                }
-
-            val validUrl = sanitizedUrl ?: repository.findValidFullResUrl(item.id, item.tag) ?: item.thumbnail.replace(".avif", ".jpg")
-            updateJobState(item.id, validUrl, DownloadState.DOWNLOADING)
-
-            val cleanUrl = validUrl.substringBefore("?")
-            val ext =
-                if (cleanUrl.substringAfterLast("/", "").contains(".")) {
-                    cleanUrl.substringAfterLast(".", "jpg")
-                } else {
-                    "jpg"
-                }
-
-            val safeTag = item.tag.replace("[^a-zA-Z0-9.-]".toRegex(), "_")
-            val fileName = "Zerochan_${safeTag}_${item.id}.$ext"
-
-            val file = repository.downloadImageToDisk(validUrl, fileName, currentDownloadDirectory)
-            if (file != null && _showDownloadsModal.value) loadLocalLibrary()
-
-            updateJobState(item.id, validUrl, if (file != null) DownloadState.SUCCESS else DownloadState.ERROR)
-        }
-    }
-
-    /**
-     * Re-scans the local file directory for downloads.
-     */
     fun loadLocalLibrary() {
         _localFiles.value = FileUtil.getImagesFromDirectory(currentDownloadDirectory)
     }
@@ -231,9 +239,10 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         _showDownloadsModal.value = show
     }
 
-    /**
-     * Fetches detailed metadata for a specific Zerochan item.
-     */
+    // -------------------------------------------------------------------------
+    // Item Details
+    // -------------------------------------------------------------------------
+
     fun fetchItemDetails(id: Int) {
         scope.launch {
             _isLoadingDetails.value = true
@@ -247,19 +256,9 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         _selectedItemDetails.value = null
     }
 
-    fun toggleSelection(id: Int) {
-        _selectedIdsForDownload.update { current ->
-            if (current.contains(id)) current - id else current + id
-        }
-    }
-
-    fun selectItem(id: Int) {
-        _selectedIdsForDownload.update { it + id }
-    }
-
-    fun clearSelection() {
-        _selectedIdsForDownload.update { emptySet() }
-    }
+    // -------------------------------------------------------------------------
+    // Image Modal
+    // -------------------------------------------------------------------------
 
     fun onImageClick(item: ZerochanItem) {
         _selectedItem.update { item }
@@ -276,6 +275,10 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         _verifiedFullResUrl.update { null }
         _selectedItemDetails.value = null
     }
+
+    // -------------------------------------------------------------------------
+    // Search
+    // -------------------------------------------------------------------------
 
     fun loadSearchHistory() {
         val history =
@@ -297,10 +300,11 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         currentHistory.add(0, query)
         repository.profileManager.searchHistory = currentHistory
 
-        Logger.debug(TAG, "Searching for: $query")
+        Logger.debug(logTAG, "Searching for: $query")
         currentPage = 1
 
         scope.launch {
+            _isSearching.update { true }
             _isLoading.update { true }
             _error.update { null }
             _isUsernameMissing.update { false }
@@ -316,10 +320,11 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
                 if (e is NoUsernameException) {
                     _isUsernameMissing.update { true }
                 } else {
-                    Logger.error(TAG, "Search entirely failed", e)
+                    Logger.error(logTAG, "Search entirely failed", e)
                     _error.update { e.message }
                 }
             }
+            _isSearching.update { false }
             _isLoading.update { false }
         }
     }
@@ -348,65 +353,11 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
                 if (e is NoUsernameException) {
                     _isUsernameMissing.update { true }
                 } else {
-                    Logger.error(TAG, "Pagination failed", e)
+                    Logger.error(logTAG, "Pagination failed", e)
                     _error.update { e.message }
                 }
             }
             _isLoading.update { false }
-        }
-    }
-
-    fun downloadSelectedItems() {
-        val selectedIds = _selectedIdsForDownload.value
-        if (selectedIds.isEmpty()) return
-
-        val itemsToDownload = _images.value.filter { it.id in selectedIds }
-        clearSelection()
-
-        val newJobs = itemsToDownload.map { DownloadJob(it) }
-        _downloadQueue.update { current -> current + newJobs }
-
-        scope.launch {
-            newJobs.forEach { job ->
-                val validUrl = repository.findValidFullResUrl(job.item.id, job.item.tag)
-                val downloadUrl = validUrl ?: job.item.thumbnail.replace(".avif", ".jpg")
-
-                updateJobState(job.item.id, downloadUrl, DownloadState.DOWNLOADING)
-
-                val ext = downloadUrl.substringAfterLast(".", "jpg")
-                val safeTag = job.item.tag.replace("[^a-zA-Z0-9.-]".toRegex(), "_")
-                val fileName = "Zerochan_${safeTag}_${job.item.id}.$ext"
-
-                val file = repository.downloadImageToDisk(downloadUrl, fileName, currentDownloadDirectory)
-
-                if (file != null && _showDownloadsModal.value) {
-                    loadLocalLibrary()
-                }
-
-                updateJobState(
-                    id = job.item.id,
-                    url = downloadUrl,
-                    state = if (file != null) DownloadState.SUCCESS else DownloadState.ERROR,
-                )
-            }
-        }
-    }
-
-    private fun updateJobState(
-        id: Int,
-        url: String,
-        state: DownloadState,
-    ) {
-        _downloadQueue.update { queue ->
-            queue.map {
-                if (it.item.id == id) it.copy(resolvedUrl = url, state = state) else it
-            }
-        }
-    }
-
-    fun clearCompletedDownloads() {
-        _downloadQueue.update { queue ->
-            queue.filter { it.state == DownloadState.PREPARING || it.state == DownloadState.DOWNLOADING }
         }
     }
 
@@ -431,7 +382,108 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         if (isFocused && _query.value.isBlank()) {
             loadSearchHistory()
         } else if (!isFocused) {
-            _suggestions.update { emptyList() }
+            // Delay clear to allow click events on suggestions to fire first
+            scope.launch {
+                delay(200)
+                _suggestions.update { emptyList() }
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // Downloads
+    // -------------------------------------------------------------------------
+
+    fun downloadSingleItem(
+        item: ZerochanItem,
+        knownUrl: String? = null,
+    ) {
+        val job = DownloadJob(item, knownUrl)
+        _downloadQueue.update { current -> current + job }
+
+        scope.launch {
+            val sanitizedUrl =
+                knownUrl?.let { url ->
+                    when {
+                        url.isBlank() -> null
+                        url.startsWith("//") -> "https:$url"
+                        url.startsWith("/") -> null
+                        else -> url
+                    }
+                }
+
+            val validUrl = sanitizedUrl ?: repository.findValidFullResUrl(item.id, item.tag) ?: item.thumbnail.replace(".avif", ".jpg")
+            updateJobState(item.id, validUrl, DownloadState.DOWNLOADING)
+
+            val cleanUrl = validUrl.substringBefore("?")
+            val ext =
+                if (cleanUrl.substringAfterLast("/", "").contains(".")) {
+                    cleanUrl.substringAfterLast(".", "jpg")
+                } else {
+                    "jpg"
+                }
+
+            val safeTag = item.tag.replace("[^a-zA-Z0-9.-]".toRegex(), "_")
+            val fileName = "Zerochan_${safeTag}_${item.id}.$ext"
+
+            val file = repository.downloadImageToDisk(validUrl, fileName, currentDownloadDirectory)
+            if (file != null && _showDownloadsModal.value) loadLocalLibrary()
+
+            updateJobState(item.id, validUrl, if (file != null) DownloadState.SUCCESS else DownloadState.ERROR)
+        }
+    }
+
+    fun downloadSelectedItems() {
+        val selectedIds = _selectedIdsForDownload.value
+        if (selectedIds.isEmpty()) return
+
+        val itemsToDownload = _images.value.filter { it.id in selectedIds }
+        clearSelection()
+
+        val newJobs = itemsToDownload.map { DownloadJob(it) }
+        _downloadQueue.update { current -> current + newJobs }
+
+        scope.launch {
+            newJobs.forEach { downloadJob ->
+                val validUrl = repository.findValidFullResUrl(downloadJob.item.id, downloadJob.item.tag)
+                val downloadUrl = validUrl ?: downloadJob.item.thumbnail.replace(".avif", ".jpg")
+
+                updateJobState(downloadJob.item.id, downloadUrl, DownloadState.DOWNLOADING)
+
+                val ext = downloadUrl.substringAfterLast(".", "jpg")
+                val safeTag = downloadJob.item.tag.replace("[^a-zA-Z0-9.-]".toRegex(), "_")
+                val fileName = "Zerochan_${safeTag}_${downloadJob.item.id}.$ext"
+
+                val file = repository.downloadImageToDisk(downloadUrl, fileName, currentDownloadDirectory)
+
+                if (file != null && _showDownloadsModal.value) {
+                    loadLocalLibrary()
+                }
+
+                updateJobState(
+                    id = downloadJob.item.id,
+                    url = downloadUrl,
+                    newState = if (file != null) DownloadState.SUCCESS else DownloadState.ERROR,
+                )
+            }
+        }
+    }
+
+    private fun updateJobState(
+        id: Int,
+        url: String,
+        newState: DownloadState,
+    ) {
+        _downloadQueue.update { queue ->
+            queue.map { entry ->
+                if (entry.item.id == id) entry.copy(resolvedUrl = url, state = newState) else entry
+            }
+        }
+    }
+
+    fun clearCompletedDownloads() {
+        _downloadQueue.update { queue ->
+            queue.filter { entry -> entry.state == DownloadState.PREPARING || entry.state == DownloadState.DOWNLOADING }
         }
     }
 

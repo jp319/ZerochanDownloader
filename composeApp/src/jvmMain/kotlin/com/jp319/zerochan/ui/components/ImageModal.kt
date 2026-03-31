@@ -29,6 +29,7 @@ import compose.icons.tablericons.AlertTriangle
 import compose.icons.tablericons.CircleX
 import compose.icons.tablericons.Download
 import compose.icons.tablericons.InfoCircle
+import compose.icons.tablericons.Maximize
 import org.jetbrains.compose.animatedimage.AnimatedImage
 import java.io.File
 
@@ -88,6 +89,19 @@ fun ImageModal(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    AppTooltip(text = "Reset Zoom (100%)") {
+                        IconButton(
+                            onClick = {
+                                scale = 1f
+                                offsetX = 0f
+                                offsetY = 0f
+                            },
+                            enabled = scale != 1f || offsetX != 0f || offsetY != 0f,
+                        ) {
+                            Icon(TablerIcons.Maximize, contentDescription = "Reset Zoom")
+                        }
+                    }
+
                     AppTooltip(text = "Download original resolution image") {
                         FilledTonalButton(onClick = onDownload, modifier = Modifier.padding(end = 8.dp)) {
                             Icon(TablerIcons.Download, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -176,7 +190,7 @@ fun ImageModal(
                                             .fillMaxSize()
                                             .pointerInput(Unit) {
                                                 detectTransformGestures { _, pan, zoom, _ ->
-                                                    scale = (scale * zoom).coerceIn(1f, 5f)
+                                                    scale = (scale * zoom).coerceIn(1f, 10f)
                                                     if (scale > 1f) {
                                                         offsetX += pan.x
                                                         offsetY += pan.y

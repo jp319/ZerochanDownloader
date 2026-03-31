@@ -1,25 +1,41 @@
 package com.jp319.zerochan.ui.components
 
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.*
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.PointerIcon
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.PopupProperties
 import com.jp319.zerochan.data.model.ZerochanSuggestion
 import compose.icons.TablerIcons
 import compose.icons.tablericons.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun SearchBar(
     query: String,
@@ -27,222 +43,295 @@ fun SearchBar(
     onSearch: (String) -> Unit,
     suggestions: List<ZerochanSuggestion>,
     onFocusChanged: (Boolean) -> Unit,
-    onToggleFilters: () -> Unit,
-    isFilterPanelVisible: Boolean,
     isLoading: Boolean,
+    isFilterPanelVisible: Boolean,
+    onToggleFilters: () -> Unit,
+    filterContent: @Composable ColumnScope.() -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    BoxWithConstraints(modifier = modifier) {
-        val searchBarWidth = maxWidth
+    var isFocused by remember { mutableStateOf(false) }
+    var focusedIndex by remember { mutableIntStateOf(-1) }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // The custom Surface provides the background color and shape
-            Surface(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .height(40.dp),
-                // Perfect 40dp height without clipping
-                shape = MaterialTheme.shapes.extraLarge,
-                // The background color!
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            ) {
+    // --- ENH 4: Focused Border ---
+    val borderColor by animateColorAsState(
+        if (isFocused) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+        else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
+        animationSpec = tween(200)
+    )
+
+    Column(modifier = modifier) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            tonalElevation = 0.dp,
+            shadowElevation = 4.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(2.dp, borderColor, RoundedCornerShape(24.dp))
+                .onFocusChanged {
+                    isFocused = it.isFocused
+                    onFocusChanged(it.isFocused)
+                    if (!it.isFocused) focusedIndex = -1
+                }
+                .onPreviewKeyEvent { event ->
+                    // --- ENH 1: Escape key support ---
+                    if (event.key == Key.Escape && event.type == KeyEventType.KeyDown) {
+                        onFocusChanged(false)
+                        focusedIndex = -1
+                        return@onPreviewKeyEvent true
+                    }
+                    if (event.type == KeyEventType.KeyDown) {
+                        when (event.key) {
+                            Key.DirectionDown -> {
+                                if (suggestions.isNotEmpty()) {
+                                    focusedIndex = (focusedIndex + 1).coerceAtMost(suggestions.lastIndex)
+                                    true
+                                } else false
+                            }
+                            Key.DirectionUp -> {
+                                if (suggestions.isNotEmpty()) {
+                                    focusedIndex = (focusedIndex - 1).coerceAtLeast(-1)
+                                    true
+                                } else false
+                            }
+                            Key.Enter -> {
+                                if (focusedIndex != -1 && suggestions.indices.contains(focusedIndex)) {
+                                    onQueryChange(suggestions[focusedIndex].value)
+                                    onSearch(suggestions[focusedIndex].value)
+                                    focusedIndex = -1
+                                    true
+                                } else {
+                                    onSearch(query)
+                                    true
+                                }
+                            }
+                            else -> false
+                        }
+                    } else false
+                },
+        ) {
+            Column {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 16.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
-                    // Leading Icon
                     Icon(
-                        TablerIcons.Search,
-                        contentDescription = "Search",
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        imageVector = TablerIcons.Search,
+                        contentDescription = null,
+                        tint = if (isFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp),
                     )
 
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // BasicTextField gives us raw control with zero default padding
                     Box(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
                         contentAlignment = Alignment.CenterStart,
                     ) {
-                        // Custom Placeholder
                         if (query.isEmpty()) {
                             Text(
-                                "Search tags (e.g., Frieren, One Piece)...",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                "Search tags...",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                style = MaterialTheme.typography.bodyLarge,
                             )
                         }
-
                         BasicTextField(
                             value = query,
                             onValueChange = onQueryChange,
-                            singleLine = true,
-                            textStyle = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface),
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
                             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .semantics { 
+                                    contentDescription = "Search input"
+                                },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            keyboardActions =
-                                KeyboardActions(
-                                    onSearch = {
-                                        if (query.isNotBlank() && !isLoading) {
-                                            onFocusChanged(false)
-                                            onSearch(query)
-                                        }
-                                    },
-                                ),
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .onFocusChanged { focusState ->
-                                        onFocusChanged(focusState.isFocused)
-                                    },
+                            keyboardActions = KeyboardActions(onSearch = { onSearch(query) }),
+                            singleLine = true,
                         )
                     }
 
-                    // Trailing Clear Button
                     if (query.isNotEmpty()) {
                         AppTooltip(text = "Clear Search") {
                             IconButton(
-                                onClick = {
-                                    onQueryChange("")
-                                    onFocusChanged(true)
-                                },
-                                modifier = Modifier.size(24.dp),
+                                onClick = { onQueryChange("") },
+                                modifier = Modifier.size(28.dp),
                             ) {
-                                Icon(
-                                    TablerIcons.X,
-                                    contentDescription = "Clear",
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                )
+                                Icon(TablerIcons.X, contentDescription = "Clear", modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    }
+
+                    VerticalDivider(modifier = Modifier.height(24.dp).padding(horizontal = 8.dp))
+
+                    AppTooltip(text = if (isFilterPanelVisible) "Hide Filters" else "Show Filters") {
+                        IconButton(
+                            onClick = onToggleFilters,
+                            colors =
+                                IconButtonDefaults.iconButtonColors(
+                                    contentColor = if (isFilterPanelVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                ),
+                            modifier = Modifier.size(32.dp),
+                        ) {
+                            Icon(TablerIcons.AdjustmentsHorizontal, contentDescription = "Toggle Filters")
+                        }
+                    }
+
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(32.dp).padding(6.dp),
+                            strokeWidth = 3.dp,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    } else {
+                        AppTooltip(text = "Search") {
+                            IconButton(onClick = { onSearch(query) }, modifier = Modifier.size(32.dp)) {
+                                Icon(TablerIcons.ChevronRight, contentDescription = "Search", tint = MaterialTheme.colorScheme.primary)
                             }
                         }
                     }
                 }
-            }
 
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // The Dedicated Search / Loading Button
-            Button(
-                onClick = {
-                    onFocusChanged(false)
-                    onSearch(query)
-                },
-                enabled = query.isNotBlank() && !isLoading,
-                modifier = Modifier.height(40.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-                shape = MaterialTheme.shapes.extraLarge,
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp,
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text("Searching...", style = MaterialTheme.typography.labelMedium)
-                } else {
-                    Icon(TablerIcons.Search, contentDescription = "Search", modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text("Search", style = MaterialTheme.typography.labelMedium)
-                }
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // The Filter Toggle
-            AppTooltip(text = "Advanced Filters") {
-                IconButton(
-                    onClick = onToggleFilters,
-                    modifier = Modifier.size(40.dp),
-                    colors =
-                        if (isFilterPanelVisible) {
-                            IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                        } else {
-                            IconButtonDefaults.filledTonalIconButtonColors()
-                        },
+                // --- ENH 7i: Spring animation for accordion ---
+                AnimatedVisibility(
+                    visible = isFilterPanelVisible,
+                    enter = expandVertically(spring(dampingRatio = 0.8f, stiffness = 300f)),
+                    exit = shrinkVertically(spring(dampingRatio = 0.8f, stiffness = 300f)),
                 ) {
-                    Icon(TablerIcons.AdjustmentsHorizontal, contentDescription = "Filters", modifier = Modifier.size(20.dp))
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                        filterContent()
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
-            }
-        }
 
-        // The Dropdown Menu (unchanged)
-        DropdownMenu(
-            expanded = suggestions.isNotEmpty(),
-            onDismissRequest = { onFocusChanged(false) },
-            modifier = Modifier.width(searchBarWidth).heightIn(max = 400.dp),
-            properties = PopupProperties(focusable = false),
-        ) {
-            suggestions.forEach { suggestion ->
-                DropdownMenuItem(
-                    onClick = {
-                        onQueryChange(suggestion.value)
-                        onFocusChanged(false)
-                        onSearch(suggestion.value)
-                    },
-                    text = {
-                        Row(modifier = Modifier.fillMaxWidth()) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = suggestion.value,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    if (!suggestion.type.isNullOrBlank()) {
-                                        Text(
-                                            text = suggestion.type,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                    }
-                                    if (!suggestion.alias.isNullOrBlank() && suggestion.alias != suggestion.value) {
-                                        Text(
-                                            text = "alias: ${suggestion.alias}",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                        )
-                                    }
+                AnimatedVisibility(
+                    visible = isFocused && (query.isNotEmpty() || suggestions.isNotEmpty()),
+                    enter = expandVertically(spring(dampingRatio = 0.8f, stiffness = 300f)),
+                    exit = shrinkVertically(spring(dampingRatio = 0.8f, stiffness = 300f)),
+                ) {
+                    Column {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 250.dp)
+                                .padding(vertical = 8.dp),
+                        ) {
+                            if (suggestions.isEmpty()) {
+                                item { 
+                                    SuggestionItem(
+                                        value = "No matching tags for \"$query\"",
+                                        icon = TablerIcons.InfoCircle,
+                                        isHighlighted = false,
+                                        index = 0,
+                                        onClick = {}
+                                    )
                                 }
-                            }
-
-                            if (suggestion.total != null && suggestion.total > 0) {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = MaterialTheme.shapes.small,
-                                ) {
-                                    Text(
-                                        text = "${suggestion.total}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            } else {
+                                itemsIndexed(suggestions) { index, suggestion ->
+                                    SuggestionItem(
+                                        value = suggestion.value,
+                                        type = suggestion.type,
+                                        total = suggestion.total,
+                                        icon = when (suggestion.type?.lowercase()) {
+                                            "character" -> TablerIcons.User
+                                            "series" -> TablerIcons.Book
+                                            "recent" -> TablerIcons.History
+                                            else -> TablerIcons.Tag
+                                        },
+                                        isHighlighted = index == focusedIndex,
+                                        index = index,
+                                        onClick = {
+                                            // Trigger search immediately
+                                            onQueryChange(suggestion.value)
+                                            onSearch(suggestion.value)
+                                        },
                                     )
                                 }
                             }
                         }
-                    },
-                    leadingIcon = {
-                        val icon =
-                            when (suggestion.type?.lowercase()) {
-                                "recent search" -> TablerIcons.History
-                                "character" -> TablerIcons.User
-                                "mangaka", "studio" -> TablerIcons.Brush
-                                "series", "game" -> TablerIcons.Book
-                                else -> TablerIcons.Tag
-                            }
-                        Icon(
-                            icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    },
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun SuggestionItem(
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    isHighlighted: Boolean,
+    index: Int,
+    type: String? = null,
+    total: Int? = null,
+    onClick: () -> Unit,
+) {
+    var isHovered by remember { mutableStateOf(false) }
+
+    val backgroundColor by animateColorAsState(
+        if (isHighlighted || isHovered) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        else Color.Transparent,
+        animationSpec = tween(150),
+    )
+
+    // --- ENH 7d: Staggered slide-in ---
+    var isVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { isVisible = true }
+
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = slideInVertically(
+            initialOffsetY = { -20 },
+            animationSpec = tween(durationMillis = 200, delayMillis = (index * 30).coerceAtMost(150))
+        ) + fadeIn()
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(backgroundColor)
+                .onPointerEvent(PointerEventType.Enter) { isHovered = true }
+                .onPointerEvent(PointerEventType.Exit) { isHovered = false }
+                .onPointerEvent(PointerEventType.Release) { 
+                    onClick()
+                }
+                .pointerHoverIcon(PointerIcon.Hand)
+                .padding(horizontal = 16.dp, vertical = 10.dp)
+                .semantics { 
+                    role = Role.Button
+                    contentDescription = "Search suggestion: $value"
+                },
+        ) {
+            Icon(
+                icon,
+                null,
+                modifier = Modifier.size(16.dp),
+                tint = if (isHighlighted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+            )
+            Spacer(Modifier.width(16.dp))
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = if (isHighlighted) FontWeight.Bold else FontWeight.Normal,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            if (type != null) {
+                Text(
+                    type,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+            }
+            if (total != null && total > 0) {
+                Text(
+                    total.toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                 )
             }
         }
