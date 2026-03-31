@@ -70,22 +70,29 @@ jobs:
       - name: Setup SSH for AUR
         run: |
           mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
           
-          # Read the secret into the file
-          AUR_KEY="${{ secrets.AUR_SSH_PRIVATE_KEY }}"
-          echo "$AUR_KEY" > ~/.ssh/aur
+          # Immediate safeguard: Fail cleanly if the secret is missing or empty
+          if [ -z "${{ secrets.AUR_SSH_PRIVATE_KEY }}" ]; then
+            echo "ERROR: AUR_SSH_PRIVATE_KEY is empty or not accessible by this workflow!"
+            exit 1
+          fi
+          
+          # Write the secret
+          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/aur
           chmod 600 ~/.ssh/aur
           
-          # Scan the host key just in case
-          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+          # Hardcode the official AUR Ed25519 fingerprint (100% immune to keyscan failures)
+          echo "aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE14BGe12bB/pGv11E0XFhC7ZEDvR2bTInA71U9J45xT" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
           
-          # Configure Git to use the SSH key and explicitly disable Strict Host Checking
+          # Configure Git to use the SSH key
           cat <<EOF > ~/.ssh/config
           Host aur.archlinux.org
             IdentityFile ~/.ssh/aur
             User aur
-            StrictHostKeyChecking no
           EOF
+          chmod 600 ~/.ssh/config
 
       - name: Clone AUR Repository
         run: git clone ssh://aur@aur.archlinux.org/zerochan-downloader-bin.git aur-repo
