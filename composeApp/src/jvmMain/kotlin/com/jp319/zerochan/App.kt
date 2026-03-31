@@ -346,6 +346,9 @@ private fun MainScreen(
     val isUpdateAvailable by viewModel.isUpdateAvailable.collectAsState()
     val selectedIds by viewModel.selectedIdsForDownload.collectAsState()
     val isSelectionModeActive by viewModel.isSelectionModeActive.collectAsState()
+    val showDownloadsModal by viewModel.showDownloadsModal.collectAsState()
+    val localFiles by viewModel.localFiles.collectAsState()
+    val downloadQueue by viewModel.downloadQueue.collectAsState()
 
     if (showGuideDialog) {
         GuideDialog(
@@ -367,6 +370,7 @@ private fun MainScreen(
         )
     }
 
+
     if (showProfileDialog) {
         ProfileDialog(
             profileManager = profileManager,
@@ -383,9 +387,11 @@ private fun MainScreen(
         topBar = {
             Column {
                 if (windowScope != null) {
+                    val ongoingDownloadCount by viewModel.ongoingDownloadCount.collectAsState()
                     windowScope.WindowDraggableArea {
                         TopBar(
                             burstCount = burstCount,
+                            ongoingDownloadCount = ongoingDownloadCount,
                             isUpdateAvailable = isUpdateAvailable,
                             selectedCount = selectedIds.size,
                             onDownloadClick = { viewModel.downloadSelectedItems() },
@@ -405,8 +411,10 @@ private fun MainScreen(
                         )
                     }
                 } else {
+                    val ongoingDownloadCount by viewModel.ongoingDownloadCount.collectAsState()
                     TopBar(
                         burstCount = burstCount,
+                        ongoingDownloadCount = ongoingDownloadCount,
                         isUpdateAvailable = isUpdateAvailable,
                         selectedCount = selectedIds.size,
                         onDownloadClick = { viewModel.downloadSelectedItems() },

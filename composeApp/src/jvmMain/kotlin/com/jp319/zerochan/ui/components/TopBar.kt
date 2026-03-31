@@ -42,6 +42,7 @@ import kotlin.math.roundToInt
 @Composable
 fun TopBar(
     burstCount: Int,
+    ongoingDownloadCount: Int,
     isUpdateAvailable: Boolean,
     selectedCount: Int,
     onDownloadClick: () -> Unit,
@@ -209,7 +210,21 @@ fun TopBar(
                     }
                     AppTooltip(text = "Local Library") {
                         IconButton(onClick = onLibraryClick) {
-                            Icon(TablerIcons.Folder, contentDescription = "Local Library", tint = MaterialTheme.colorScheme.primary)
+                            BadgedBox(
+                                badge = {
+                                    if (ongoingDownloadCount > 0) {
+                                        Badge(
+                                            containerColor = MaterialTheme.colorScheme.primary,
+                                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier.offset(x = (-4).dp, y = 4.dp),
+                                        ) {
+                                            Text(ongoingDownloadCount.toString())
+                                        }
+                                    }
+                                },
+                            ) {
+                                Icon(TablerIcons.Folder, contentDescription = "Local Library", tint = MaterialTheme.colorScheme.primary)
+                            }
                         }
                     }
                     AppTooltip(text = "Profile Settings") {

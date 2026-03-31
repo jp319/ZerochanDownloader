@@ -59,8 +59,6 @@ fun GalleryScreen(
     val selectedIds by viewModel.selectedIdsForDownload.collectAsState()
     val verifiedUrl by viewModel.verifiedFullResUrl.collectAsState()
     val downloadQueue by viewModel.downloadQueue.collectAsState()
-    val showDownloadManager by viewModel.showDownloadManager.collectAsState()
-    val ongoingDownloadCount by viewModel.ongoingDownloadCount.collectAsState()
     val focusManager = LocalFocusManager.current
 
     val itemDetails by viewModel.selectedItemDetails.collectAsState()
@@ -117,15 +115,6 @@ fun GalleryScreen(
             }
     }
 
-    // --- Modals & Overlays ---
-    DownloadManagerDialog(
-        show = showDownloadManager,
-        queue = downloadQueue,
-        onDismiss = { viewModel.toggleDownloadManager(false) },
-        onClearCompleted = viewModel::clearCompletedDownloads,
-        onRetry = viewModel::retryDownload,
-        onRetryAll = viewModel::retryAllDownloads,
-    )
 
     if (viewingLocalFile != null) {
         LocalImageModal(
@@ -172,12 +161,16 @@ fun GalleryScreen(
     }
 
     if (showDownloadsModal) {
-        DownloadsLibraryDialog(
+        DownloadsModal(
             currentPath = viewModel.currentDownloadDirectory,
             localFiles = localFiles,
+            downloadQueue = downloadQueue,
             onChangePath = viewModel::setDownloadDirectory,
             onDismiss = { viewModel.toggleDownloadsModal(false) },
             onImageClick = viewModel::openLocalFile,
+            onClearCompleted = viewModel::clearCompletedDownloads,
+            onRetry = viewModel::retryDownload,
+            onRetryAll = viewModel::retryAllDownloads,
         )
     }
 
@@ -422,8 +415,7 @@ fun GalleryScreen(
                         viewModel.toggleFilterPanel()
                     },
                     onRefresh = viewModel::onRefresh,
-                    ongoingDownloadCount = ongoingDownloadCount,
-                    onToggleDownloadManager = { viewModel.toggleDownloadManager() },
+                    onHomeSearch = viewModel::onHomeSearch,
                     filterContent = {
                         if (isFilterPanelVisible) {
                             FilterPanel(

@@ -16,7 +16,7 @@ ktlint {
     }
 }
 
-val packageVersion = "1.0.0"
+val packageVersion = "1.0.2"
 
 // Task to generate BuildConfig file
 val generateBuildConfig =

@@ -118,9 +118,6 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
     private val _viewingLocalFile = MutableStateFlow<File?>(null)
     val viewingLocalFile = _viewingLocalFile.asStateFlow()
 
-    private val _showDownloadManager = MutableStateFlow(false)
-    val showDownloadManager = _showDownloadManager.asStateFlow()
-
     private val downloadChannel = Channel<DownloadJob>(Channel.UNLIMITED)
 
     /** Count of active downloads (Preparing or Downloading). */
@@ -136,6 +133,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
             }
         }
         checkForUpdates()
+        onHomeSearch() // Load default results on startup
     }
 
     /**
@@ -297,6 +295,12 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
     /** Hides the search filter panel. */
     fun hideFilterPanel() {
         _isFilterPanelVisible.value = false
+    }
+
+    /** Resets the search results to the front page (Home). */
+    fun onHomeSearch() {
+        _query.update { TextFieldValue("") }
+        onSearch("")
     }
 
     /** Toggles the visibility of the search filter panel. */
@@ -496,7 +500,8 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
     /** Executes a new search with the given query. */
     fun onSearch(query: String) {
         _suggestions.update { emptyList() }
-        if (query.isBlank()) return
+        // Allow blank searches for "Home" view via the repository
+        // (If query is blank, getCurrentApiParams uses empty tag which Zerochan treats as home)
 
         clearSelection()
         _isSelectionModeActive.value = false
@@ -537,7 +542,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
     /** Loads the next page of results for the current search. */
     fun onLoadMore() {
         val currentQuery = _query.value.text
-        if (currentQuery.isBlank() || _isLoading.value || _isEndOfPaginationReached.value) return
+        if (_isLoading.value || _isEndOfPaginationReached.value) return
 
         currentPage++
         scope.launch {
@@ -655,9 +660,10 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         downloadChannel.trySend(job)
     }
 
-    /** Toggles the visibility of the Download Manager modal. */
+    /** Toggles the visibility of the Unified Downloads modal. */
     fun toggleDownloadManager(show: Boolean? = null) {
-        _showDownloadManager.update { show ?: !it }
+        _showDownloadsModal.update { show ?: !it }
+        if (_showDownloadsModal.value) loadLocalLibrary()
     }
 
     private suspend fun runDownloadSequentially(job: DownloadJob) {
