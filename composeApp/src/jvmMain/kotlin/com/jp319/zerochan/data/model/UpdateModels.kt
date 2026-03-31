@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 data class GitHubRelease(
     @SerialName("tag_name") val tagName: String,
     @SerialName("name") val name: String,
-    @SerialName("body") val body: String,
+    @SerialName("body") val body: String? = null,
     @SerialName("html_url") val htmlUrl: String,
     @SerialName("assets") val assets: List<GitHubAsset>,
 )
