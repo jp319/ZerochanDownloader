@@ -30,6 +30,14 @@ import org.jetbrains.compose.animatedimage.AnimatedImage
 import org.jetbrains.compose.animatedimage.loadAnimatedImage
 import java.io.File
 
+/**
+ * A dialog for viewing images already stored on the local disk.
+ * Similar to [ImageModal], it supports zooming, panning, and GIF playback,
+ * but reads directly from the local filesystem.
+ *
+ * @param file The local image file to display.
+ * @param onDismiss Callback to close the viewer.
+ */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun LocalImageModal(

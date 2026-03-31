@@ -14,6 +14,12 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
 
+/**
+ * A decorative loading placeholder that displays a shimmer animation.
+ * Used to indicate that a gallery item is currently being loaded.
+ *
+ * @param modifier Modifier to be applied to the shimmer box.
+ */
 @Composable
 fun ShimmerItem(modifier: Modifier = Modifier) {
     val shimmerColors =

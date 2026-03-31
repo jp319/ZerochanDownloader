@@ -41,12 +41,15 @@ import zerochan.composeapp.generated.resources.Res
 import zerochan.composeapp.generated.resources.logo
 import kotlin.time.Duration.Companion.milliseconds
 
-private fun parseHexColor(hex: String, fallback: Color): Color {
+private fun parseHexColor(
+    hex: String,
+    fallback: Color,
+): Color {
     try {
         val clean = if (hex.startsWith("#")) hex.substring(1) else hex
         val argb = if (clean.length == 6) java.lang.Long.parseLong("FF$clean", 16) else java.lang.Long.parseLong(clean, 16)
         return Color(argb)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         return fallback
     }
 }
@@ -137,15 +140,16 @@ fun ProfileDialog(
     var tempTheme by remember { mutableStateOf(currentTheme) }
     var tempThemeMode by remember { mutableStateOf(currentThemeMode) }
 
-    val themePresets = listOf(
-        "Orange" to DraculaBurntOrange, 
-        "Purple" to DraculaPurple,
-        "Pink" to DraculaPink,
-        "Green" to DraculaGreen,
-        "Red" to DraculaRed,
-        "Yellow" to DraculaYellow,
-        "Cyan" to DraculaCyan
-    )
+    val themePresets =
+        listOf(
+            "Orange" to DraculaBurntOrange,
+            "Purple" to DraculaPurple,
+            "Pink" to DraculaPink,
+            "Green" to DraculaGreen,
+            "Red" to DraculaRed,
+            "Yellow" to DraculaYellow,
+            "Cyan" to DraculaCyan,
+        )
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -177,13 +181,14 @@ fun ProfileDialog(
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(bottom = 12.dp),
                 )
-                
+
                 // Theme Mode Selection
                 Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         val modes = listOf("Dark", "Light", "AMOLED", "Dracula", "Nord", "Monokai")
@@ -191,14 +196,17 @@ fun ProfileDialog(
                             val isSelected = tempThemeMode == mode
                             ZerochanChip(
                                 selected = isSelected,
-                                onClick = { 
+                                onClick = {
                                     tempThemeMode = mode
                                     onThemeModeChange(mode)
                                 },
                                 label = mode,
-                                leadingIcon = if (isSelected) {
-                                    { Icon(TablerIcons.Check, null, Modifier.size(16.dp)) }
-                                } else null
+                                leadingIcon =
+                                    if (isSelected) {
+                                        { Icon(TablerIcons.Check, null, Modifier.size(16.dp)) }
+                                    } else {
+                                        null
+                                    },
                             )
                         }
                     }
@@ -209,14 +217,15 @@ fun ProfileDialog(
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.padding(bottom = 12.dp),
                 )
-                
+
                 Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         themePresets.forEach { (name, color) ->
                             val isSelected = tempTheme == LegacyThemeMap[name] || tempTheme == name
@@ -252,13 +261,13 @@ fun ProfileDialog(
                         }
                     }
                 }
-                
+
                 Text(
                     "Custom Color",
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.padding(bottom = 8.dp),
                 )
-                
+
                 // --- HSL Color Picker ---
                 com.jp319.zerochan.ui.components.HslColorPicker(
                     initialColor = parseHexColor(tempTheme, DraculaBurntOrange),
@@ -268,15 +277,15 @@ fun ProfileDialog(
                         tempTheme = hex
                         onThemeChange(hex)
                     },
-                    modifier = Modifier.fillMaxWidth().height(200.dp).padding(horizontal = 16.dp)
+                    modifier = Modifier.fillMaxWidth().height(200.dp).padding(horizontal = 16.dp),
                 )
-                
+
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
                     Surface(
                         modifier = Modifier.size(24.dp),
                         shape = CircleShape,
                         color = parseHexColor(tempTheme, DraculaBurntOrange),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     ) {}
                     Spacer(Modifier.width(8.dp))
                     Text(tempTheme, style = MaterialTheme.typography.labelMedium)

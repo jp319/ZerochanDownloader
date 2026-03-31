@@ -19,6 +19,14 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.animatedimage.AnimatedImage
 import org.jetbrains.compose.animatedimage.animate
 
+/**
+ * A specialized viewer for animated GIF images that supports interactive
+ * zooming and panning.
+ *
+ * @param animatedImage The loaded animated image object, or null if still loading.
+ * @param progress The current download or parsing progress (0.0 to 1.0).
+ * @param modifier Modifier to be applied to the root container.
+ */
 @Composable
 fun ZoomableGifViewer(
     animatedImage: AnimatedImage?,

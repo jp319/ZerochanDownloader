@@ -4,8 +4,17 @@ import java.awt.Desktop
 import java.io.File
 import javax.swing.JFileChooser
 
+/**
+ * A utility class for file system operations, including image discovery,
+ * native OS file selection, and opening files or URLs with default system applications.
+ */
 object FileUtil {
-    // Reads image files directly from the hard drive
+    /**
+     * Scans a directory for supported image formats.
+     *
+     * @param directoryPath The path to search.
+     * @return A list of [File] objects found, sorted by modification date.
+     */
     fun getImagesFromDirectory(directoryPath: String): List<File> {
         val dir = File(directoryPath)
         if (!dir.exists() || !dir.isDirectory) return emptyList()
@@ -15,7 +24,12 @@ object FileUtil {
         }?.sortedByDescending { it.lastModified() } ?: emptyList()
     }
 
-    // Opens the OS native folder picker
+    /**
+     * Opens a native OS directory picker dialog using JFileChooser.
+     *
+     * @param currentPath The initial path to open the picker at.
+     * @param onPathSelected Callback triggered once a valid directory is chosen.
+     */
     fun chooseDirectory(
         currentPath: String,
         onPathSelected: (String) -> Unit,
@@ -32,7 +46,11 @@ object FileUtil {
         }
     }
 
-    // Opens the image in Windows Photo Viewer / Mac Preview natively!
+    /**
+     * Opens a specific file using the OS's default associated application.
+     *
+     * @param file The file to be opened.
+     */
     fun openFileNatively(file: File) {
         try {
             if (Desktop.isDesktopSupported()) {
@@ -51,7 +69,12 @@ object FileUtil {
         }
     }
 
-    // Opens a webpage reliably across Windows, Mac, and Linux
+    /**
+     * Opens a URL in the system's default web browser.
+     * Supports multi-platform commands for Windows, Mac, and Linux.
+     *
+     * @param url The target website address.
+     */
     fun openWebpage(url: String) {
         try {
             if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {

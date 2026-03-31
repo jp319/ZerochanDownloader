@@ -14,14 +14,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -32,6 +32,18 @@ import com.jp319.zerochan.data.model.ZerochanItem
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Check
 
+/**
+ * A visually rich card representing a single Zerochan image in the grid.
+ * Supports hover effects, press scaling, multi-selection, and long-press gestures.
+ * Displays a "GIF" badge if the item is animated.
+ *
+ * @param item The image item data to display.
+ * @param isSelected Whether this card is currently selected.
+ * @param isSelectionModeActive Whether the gallery is in batch selection mode.
+ * @param onClick Callback triggered on a standard click.
+ * @param onLongClick Callback triggered on a long-press.
+ * @param onDragStart Callback to initiate a drag-selection gesture.
+ */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun ImageCard(
@@ -48,50 +60,52 @@ fun ImageCard(
 
     // --- ENH 7a: Spring-based press & hover scaling ---
     val cardScale by animateFloatAsState(
-        targetValue = when {
-            isPressed -> 0.96f
-            isHovered -> 1.04f
-            else -> 1f
-        },
-        animationSpec = spring(dampingRatio = 0.6f, stiffness = 400f)
+        targetValue =
+            when {
+                isPressed -> 0.96f
+                isHovered -> 1.04f
+                else -> 1f
+            },
+        animationSpec = spring(dampingRatio = 0.6f, stiffness = 400f),
     )
 
     // --- ENH 7b: Staggered entrance animation ---
     var isVisible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { isVisible = true }
-    
+
     val entranceAlpha by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
-        animationSpec = tween(600, easing = LinearOutSlowInEasing)
+        animationSpec = tween(600, easing = LinearOutSlowInEasing),
     )
     val entranceTranslation by animateDpAsState(
         targetValue = if (isVisible) 0.dp else 40.dp,
-        animationSpec = tween(600, easing = LinearOutSlowInEasing)
+        animationSpec = tween(600, easing = LinearOutSlowInEasing),
     )
 
     val safeImageUrl = item.thumbnail.replace(".avif", ".jpg")
     val imageAspectRatio = if (item.height > 0) item.width.toFloat() / item.height.toFloat() else 1f
 
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .graphicsLayer {
-                alpha = entranceAlpha
-                translationY = entranceTranslation.toPx()
-            }
-            .scale(cardScale)
-            .onPointerEvent(PointerEventType.Press) {
-                if (isSelectionModeActive) onDragStart(null)
-            }
-            .combinedClickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick,
-                onLongClick = { 
-                    onLongClick()
-                    onDragStart(!isSelected)
-                },
-            ),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    alpha = entranceAlpha
+                    translationY = entranceTranslation.toPx()
+                }
+                .scale(cardScale)
+                .onPointerEvent(PointerEventType.Press) {
+                    if (isSelectionModeActive) onDragStart(null)
+                }
+                .combinedClickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    onClick = onClick,
+                    onLongClick = {
+                        onLongClick()
+                        onDragStart(!isSelected)
+                    },
+                ),
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
         tonalElevation = if (isHovered) 6.dp else 1.dp,
@@ -103,21 +117,26 @@ fun ImageCard(
                 contentDescription = item.tag,
                 contentScale = ContentScale.FillWidth,
                 placeholder = remember { ColorPainter(Color.LightGray.copy(alpha = 0.2f)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(imageAspectRatio)
-                    .clip(RoundedCornerShape(12.dp)),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(imageAspectRatio)
+                        .clip(RoundedCornerShape(12.dp)),
             )
 
             // Selection Indicator Overlay
             if (isSelectionModeActive || isSelected) {
                 Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(
-                            if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
-                            else Color.Transparent,
-                        ),
+                    modifier =
+                        Modifier
+                            .matchParentSize()
+                            .background(
+                                if (isSelected) {
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                                } else {
+                                    Color.Transparent
+                                },
+                            ),
                 )
 
                 // --- ENH 7c: Checkmark Pop Animation ---
@@ -151,14 +170,15 @@ fun ImageCard(
                 modifier = Modifier.align(Alignment.BottomStart),
             ) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)),
-                            ),
-                        )
-                        .padding(12.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(Color.Transparent, Color.Black.copy(alpha = 0.75f)),
+                                ),
+                            )
+                            .padding(12.dp),
                 ) {
                     Text(
                         text = item.tag,
@@ -166,11 +186,11 @@ fun ImageCard(
                         style = MaterialTheme.typography.labelSmall,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
                     )
                 }
             }
-            
+
             // GIF Badge
             val hasGifTag = remember(item.tags) { item.tags.any { it.lowercase().contains("animated gif") } }
             if (hasGifTag) {

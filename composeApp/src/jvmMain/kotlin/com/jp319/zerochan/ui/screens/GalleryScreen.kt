@@ -32,6 +32,15 @@ import compose.icons.tablericons.Flag
 import compose.icons.tablericons.Plus
 import compose.icons.tablericons.Search
 
+/**
+ * The primary screen of the application, responsible for displaying the image gallery,
+ * search interface, and various interaction overlays.
+ *
+ * @param viewModel The state holder and logic provider for the gallery.
+ * @param zoomLevel Current scaling factor for image cards in the grid.
+ * @param onZoomChange Callback triggered when the user adjusts the zoom level.
+ * @param modifier Modifier to be applied to the root layout.
+ */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun GalleryScreen(
@@ -72,7 +81,7 @@ fun GalleryScreen(
     val dimensionFilter by viewModel.dimensionFilter.collectAsState()
     val strictMode by viewModel.strictMode.collectAsState()
     val colorFilter by viewModel.colorFilter.collectAsState()
-    
+
     // --- Drag-to-select Bounding Box State (Bug 5) ---
     var dragStartPosition by remember { mutableStateOf<Offset?>(null) }
     var currentDragPosition by remember { mutableStateOf(Offset.Zero) }
@@ -88,13 +97,13 @@ fun GalleryScreen(
                 val scrolledDown = index > lastScrollIndex || (index == lastScrollIndex && offset > lastScrollOffset)
                 // Always visible at the top, or when scrolling up
                 isSearchBarVisible = !scrolledDown || (index == 0 && offset < 10)
-                
+
                 if (scrolledDown && isSearchBarVisible) {
                     // Force collapse when bar hides
                     viewModel.hideFilterPanel()
                     focusManager.clearFocus()
                 }
-                
+
                 lastScrollIndex = index
                 lastScrollOffset = offset
             }
@@ -184,7 +193,7 @@ fun GalleryScreen(
         // LAYER 1: THE GRID (Bottom Layer)
         val gridPaddingTop by animateDpAsState(
             targetValue = if (isSearchBarVisible) 80.dp else 0.dp,
-            animationSpec = spring(stiffness = 300f)
+            animationSpec = spring(stiffness = 300f),
         )
 
         Box(
@@ -251,7 +260,7 @@ fun GalleryScreen(
                                     val isModeActive = isSelectionModeActive || selectedIds.isNotEmpty()
                                     if (isModeActive && event.buttons.isPrimaryPressed) {
                                         val currentPos = event.changes.first().position
-                                        
+
                                         // Ensure start position exists (fallback if press was consumed by other components)
                                         if (dragStartPosition == null) {
                                             dragStartPosition = currentPos
@@ -259,21 +268,23 @@ fun GalleryScreen(
                                         currentDragPosition = currentPos
 
                                         val start = dragStartPosition!!
-                                        val rect = Rect(
-                                            left = minOf(start.x, currentPos.x),
-                                            top = minOf(start.y, currentPos.y),
-                                            right = maxOf(start.x, currentPos.x),
-                                            bottom = maxOf(start.y, currentPos.y)
-                                        )
+                                        val rect =
+                                            Rect(
+                                                left = minOf(start.x, currentPos.x),
+                                                top = minOf(start.y, currentPos.y),
+                                                right = maxOf(start.x, currentPos.x),
+                                                bottom = maxOf(start.y, currentPos.y),
+                                            )
 
                                         val hoveredIds = mutableSetOf<Int>()
                                         gridState.layoutInfo.visibleItemsInfo.forEach { item ->
-                                            val itemRect = Rect(
-                                                left = item.offset.x.toFloat() - 1f,
-                                                top = item.offset.y.toFloat() - 1f,
-                                                right = (item.offset.x + item.size.width).toFloat() + 1f,
-                                                bottom = (item.offset.y + item.size.height).toFloat() + 1f
-                                            )
+                                            val itemRect =
+                                                Rect(
+                                                    left = item.offset.x.toFloat() - 1f,
+                                                    top = item.offset.y.toFloat() - 1f,
+                                                    right = (item.offset.x + item.size.width).toFloat() + 1f,
+                                                    bottom = (item.offset.y + item.size.height).toFloat() + 1f,
+                                                )
                                             if (rect.overlaps(itemRect)) {
                                                 (item.key as? Int)?.let { id ->
                                                     hoveredIds.add(id)
@@ -281,7 +292,7 @@ fun GalleryScreen(
                                             }
                                         }
                                         viewModel.updateDragSelectionWithSet(hoveredIds)
-                                        
+
                                         // CONSUME: Forcefully block scrolling once selection is engaged
                                         event.changes.forEach { it.consume() }
                                     }
@@ -347,7 +358,7 @@ fun GalleryScreen(
             visible = isSearchBarVisible,
             enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
             exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
-            modifier = Modifier.zIndex(10f)
+            modifier = Modifier.zIndex(10f),
         ) {
             Box(
                 modifier =
@@ -398,6 +409,14 @@ fun GalleryScreen(
 
 // --- Helper UI Components ---
 
+/**
+ * A standard UI message displayed when the gallery is in a specific state (empty, error, etc.).
+ *
+ * @param icon The icon represent the state.
+ * @param title The primary heading message.
+ * @param description A detailed explanation or call to action.
+ * @param color The accent color for the icon.
+ */
 @Composable
 fun StateMessage(
     icon: ImageVector,
@@ -418,6 +437,12 @@ fun StateMessage(
     }
 }
 
+/**
+ * A floating overlay that displays the active download items and their progress.
+ *
+ * @param downloadQueue The list of active and pending download jobs.
+ * @param onClearCompleted Callback to remove finished jobs from the queue.
+ */
 @Composable
 private fun DownloadQueueOverlay(
     downloadQueue: List<DownloadJob>,
@@ -434,6 +459,9 @@ private fun DownloadQueueOverlay(
     }
 }
 
+/**
+ * A simple message displayed at the bottom of the grid when no more pages are available.
+ */
 @Composable
 fun EndOfPaginationMessage() {
     Column(

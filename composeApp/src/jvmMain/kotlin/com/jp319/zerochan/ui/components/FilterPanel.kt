@@ -27,6 +27,23 @@ import compose.icons.tablericons.Maximize
 import compose.icons.tablericons.Palette
 import compose.icons.tablericons.X
 
+/**
+ * A panel containing various search filters such as sorting, time range,
+ * dimensions, and color matching.
+ *
+ * @param sortOrder The current sorting strategy (Recent vs Popular).
+ * @param onSortChange Callback for changing the sort order.
+ * @param timeFilter The current time range filter (only applicable for Popular sort).
+ * @param onTimeChange Callback for changing the time filter.
+ * @param dimensionFilter The current image dimension/orientation filter.
+ * @param onDimensionChange Callback for changing the dimension filter.
+ * @param colorFilter The current primary color filter.
+ * @param onColorChange Callback for changing the color filter.
+ * @param strictMode Whether to use strict tag matching.
+ * @param onStrictToggle Callback to toggle strict mode.
+ * @param onClearFilters Callback to reset all filters to their defaults.
+ * @param modifier Modifier to be applied to the root container.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun FilterPanel(
@@ -180,6 +197,16 @@ private fun parseColor(color: String): Color =
         else -> Color.Gray
     }
 
+/**
+ * A custom chip-like button used for filter toggles and dropdown triggers.
+ *
+ * @param selected Whether the chip is currently in a "selected" or "active" state.
+ * @param onClick Callback triggered when the chip is clicked.
+ * @param label The text to display on the chip.
+ * @param leadingIcon Optional icon to display before the label.
+ * @param trailingIcon Optional icon to display after the label.
+ * @param modifier Modifier to be applied to the chip surface.
+ */
 @Composable
 fun ZerochanChip(
     selected: Boolean,

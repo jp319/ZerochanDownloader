@@ -27,6 +27,17 @@ import compose.icons.tablericons.Folder
 import compose.icons.tablericons.X
 import java.io.File
 
+/**
+ * A dialog representing the local library of downloaded images.
+ * Provides features for managing the download directory, viewing storage metrics,
+ * and browsing previously downloaded files in a grid.
+ *
+ * @param currentPath The absolute filesystem path to the current download directory.
+ * @param localFiles A list of image files discovered within the current directory.
+ * @param onChangePath Callback triggered when the user selects a new download directory.
+ * @param onDismiss Callback to close the dialog.
+ * @param onImageClick Callback to open a specific local file in the modal viewer.
+ */
 @Composable
 fun DownloadsLibraryDialog(
     currentPath: String,
@@ -52,9 +63,10 @@ fun DownloadsLibraryDialog(
                 remember(currentPath) {
                     File(currentPath).apply { if (!exists()) mkdirs() }
                 }
-            val fileStore = remember(currentDir) { 
-                runCatching { java.nio.file.Files.getFileStore(currentDir.toPath()) }.getOrNull()
-            }
+            val fileStore =
+                remember(currentDir) {
+                    runCatching { java.nio.file.Files.getFileStore(currentDir.toPath()) }.getOrNull()
+                }
             val totalSpace = remember(fileStore) { fileStore?.totalSpace ?: 0L }
             val freeSpace = remember(fileStore) { fileStore?.usableSpace ?: 0L }
             val folderSize = remember(localFiles) { localFiles.sumOf { it.length() } }

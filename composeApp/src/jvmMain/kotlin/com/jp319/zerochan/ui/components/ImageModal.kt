@@ -33,6 +33,18 @@ import compose.icons.tablericons.Maximize
 import org.jetbrains.compose.animatedimage.AnimatedImage
 import java.io.File
 
+/**
+ * A full-screen dialog for previewing a selected Zerochan image in high resolution.
+ * Supports zooming, panning, and basic actions like downloading or viewing details.
+ * Also handles animated GIF playback.
+ *
+ * @param item The image item to display.
+ * @param verifiedUrl The resolved high-resolution URL for the image.
+ * @param onDismiss Callback to close the modal.
+ * @param onViewDetails Callback to fetch and show detailed metadata for the item.
+ * @param onDownload Callback to initiate a download of the full image.
+ * @param fetchGifFile Suspend function to retrieve a local file for GIF playback.
+ */
 @Composable
 fun ImageModal(
     item: ZerochanItem?,

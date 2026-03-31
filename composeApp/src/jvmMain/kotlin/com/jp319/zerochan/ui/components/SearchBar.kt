@@ -4,7 +4,6 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -15,13 +14,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -31,15 +28,31 @@ import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.jp319.zerochan.data.model.ZerochanSuggestion
 import compose.icons.TablerIcons
 import compose.icons.tablericons.*
 
+/**
+ * A highly interactive search bar component with autocomplete suggestions,
+ * filter toggle capabilities, and keyboard navigation support.
+ *
+ * @param query The current text value of the search input.
+ * @param onQueryChange Callback for text input changes.
+ * @param onSearch Callback triggered when a search is executed (Enter or button click).
+ * @param suggestions List of autocomplete or historical suggestions to display.
+ * @param onFocusChanged Callback for focus state changes.
+ * @param isLoading Whether a search or suggestion fetch is currently in progress.
+ * @param isFilterPanelVisible Whether the secondary filter panel is currently expanded.
+ * @param onToggleFilters Callback to expand/collapse the filter panel.
+ * @param onRefresh Callback to re-trigger the current search.
+ * @param filterContent Content to be displayed inside the expandable filter section.
+ * @param modifier Divider to be applied to the root layout.
+ */
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun SearchBar(
@@ -61,9 +74,12 @@ fun SearchBar(
 
     // --- ENH 4: Focused Border ---
     val borderColor by animateColorAsState(
-        if (isFocused) MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-        else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-        animationSpec = tween(200)
+        if (isFocused) {
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+        } else {
+            MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+        },
+        animationSpec = tween(200),
     )
 
     Column(modifier = modifier) {
@@ -72,54 +88,61 @@ fun SearchBar(
             color = MaterialTheme.colorScheme.surfaceVariant,
             tonalElevation = 0.dp,
             shadowElevation = 4.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(2.dp, borderColor, RoundedCornerShape(24.dp))
-                .onFocusChanged {
-                    isFocused = it.isFocused
-                    onFocusChanged(it.isFocused)
-                    if (!it.isFocused) focusedIndex = -1
-                }
-                .onPointerEvent(PointerEventType.Press) {
-                    // Consume to prevent root box from clearing focus when clicking inside search bar
-                    it.changes.forEach { change -> change.consume() }
-                }
-                .onPreviewKeyEvent { event ->
-                    // --- ENH 1: Escape key support ---
-                    if (event.key == Key.Escape && event.type == KeyEventType.KeyDown) {
-                        onFocusChanged(false)
-                        focusedIndex = -1
-                        return@onPreviewKeyEvent true
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .border(2.dp, borderColor, RoundedCornerShape(24.dp))
+                    .onFocusChanged {
+                        isFocused = it.isFocused
+                        onFocusChanged(it.isFocused)
+                        if (!it.isFocused) focusedIndex = -1
                     }
-                    if (event.type == KeyEventType.KeyDown) {
-                        when (event.key) {
-                            Key.DirectionDown -> {
-                                if (suggestions.isNotEmpty()) {
-                                    focusedIndex = (focusedIndex + 1).coerceAtMost(suggestions.lastIndex)
-                                    true
-                                } else false
-                            }
-                            Key.DirectionUp -> {
-                                if (suggestions.isNotEmpty()) {
-                                    focusedIndex = (focusedIndex - 1).coerceAtLeast(-1)
-                                    true
-                                } else false
-                            }
-                            Key.Enter -> {
-                                if (focusedIndex != -1 && suggestions.indices.contains(focusedIndex)) {
-                                    onQueryChange(TextFieldValue(suggestions[focusedIndex].value, selection = TextRange(suggestions[focusedIndex].value.length)))
-                                    onSearch(suggestions[focusedIndex].value)
-                                    focusedIndex = -1
-                                    true
-                                } else {
-                                    onSearch(query.text)
-                                    true
-                                }
-                            }
-                            else -> false
+                    .onPointerEvent(PointerEventType.Press) {
+                        // Consume to prevent root box from clearing focus when clicking inside search bar
+                        it.changes.forEach { change -> change.consume() }
+                    }
+                    .onPreviewKeyEvent { event ->
+                        // --- ENH 1: Escape key support ---
+                        if (event.key == Key.Escape && event.type == KeyEventType.KeyDown) {
+                            onFocusChanged(false)
+                            focusedIndex = -1
+                            return@onPreviewKeyEvent true
                         }
-                    } else false
-                },
+                        if (event.type == KeyEventType.KeyDown) {
+                            when (event.key) {
+                                Key.DirectionDown -> {
+                                    if (suggestions.isNotEmpty()) {
+                                        focusedIndex = (focusedIndex + 1).coerceAtMost(suggestions.lastIndex)
+                                        true
+                                    } else {
+                                        false
+                                    }
+                                }
+                                Key.DirectionUp -> {
+                                    if (suggestions.isNotEmpty()) {
+                                        focusedIndex = (focusedIndex - 1).coerceAtLeast(-1)
+                                        true
+                                    } else {
+                                        false
+                                    }
+                                }
+                                Key.Enter -> {
+                                    if (focusedIndex != -1 && suggestions.indices.contains(focusedIndex)) {
+                                        onQueryChange(TextFieldValue(suggestions[focusedIndex].value, selection = TextRange(suggestions[focusedIndex].value.length)))
+                                        onSearch(suggestions[focusedIndex].value)
+                                        focusedIndex = -1
+                                        true
+                                    } else {
+                                        onSearch(query.text)
+                                        true
+                                    }
+                                }
+                                else -> false
+                            }
+                        } else {
+                            false
+                        }
+                    },
         ) {
             Column {
                 Row(
@@ -133,35 +156,37 @@ fun SearchBar(
                         modifier = Modifier.size(20.dp),
                     )
 
-                        Box(
-                            modifier = Modifier
+                    Box(
+                        modifier =
+                            Modifier
                                 .weight(1f)
                                 .padding(horizontal = 12.dp),
-                            contentAlignment = Alignment.CenterStart,
-                        ) {
-                            if (query.text.isEmpty()) {
-                                Text(
-                                    "Search tags...",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                )
-                            }
-                            BasicTextField(
-                                value = query,
-                                onValueChange = onQueryChange,
-                                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                                modifier = Modifier
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        if (query.text.isEmpty()) {
+                            Text(
+                                "Search tags...",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                style = MaterialTheme.typography.bodyLarge,
+                            )
+                        }
+                        BasicTextField(
+                            value = query,
+                            onValueChange = onQueryChange,
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                            modifier =
+                                Modifier
                                     .fillMaxWidth()
                                     .focusRequester(focusRequester)
                                     .semantics {
                                         contentDescription = "Search input"
                                     },
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                                keyboardActions = KeyboardActions(onSearch = { onSearch(query.text) }),
-                                singleLine = true,
-                            )
-                        }
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                            keyboardActions = KeyboardActions(onSearch = { onSearch(query.text) }),
+                            singleLine = true,
+                        )
+                    }
 
                     if (query.text.isNotEmpty()) {
                         IconButton(onClick = { onQueryChange(TextFieldValue("")) }, modifier = Modifier.size(28.dp)) {
@@ -229,19 +254,20 @@ fun SearchBar(
                     Column {
                         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
                         LazyColumn(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = 250.dp)
-                                .padding(vertical = 8.dp),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 250.dp)
+                                    .padding(vertical = 8.dp),
                         ) {
                             if (suggestions.isEmpty()) {
-                                item { 
+                                item {
                                     SuggestionItem(
                                         value = "No matching tags for \"${query.text}\"",
                                         icon = TablerIcons.InfoCircle,
                                         isHighlighted = false,
                                         index = 0,
-                                        onClick = {}
+                                        onClick = {},
                                     )
                                 }
                             } else {
@@ -250,12 +276,13 @@ fun SearchBar(
                                         value = suggestion.value,
                                         type = suggestion.type,
                                         total = suggestion.total,
-                                        icon = when (suggestion.type?.lowercase()) {
-                                            "character" -> TablerIcons.User
-                                            "series" -> TablerIcons.Book
-                                            "recent" -> TablerIcons.History
-                                            else -> TablerIcons.Tag
-                                        },
+                                        icon =
+                                            when (suggestion.type?.lowercase()) {
+                                                "character" -> TablerIcons.User
+                                                "series" -> TablerIcons.Book
+                                                "recent" -> TablerIcons.History
+                                                else -> TablerIcons.Tag
+                                            },
                                         isHighlighted = index == focusedIndex,
                                         index = index,
                                         onClick = {
@@ -274,6 +301,17 @@ fun SearchBar(
     }
 }
 
+/**
+ * A single item within the search suggestion dropdown.
+ *
+ * @param value The text value of the suggestion.
+ * @param icon The icon representing the suggestion type.
+ * @param isHighlighted Whether the item is currently selected via keyboard navigation.
+ * @param index The position of the item in the list (used for animation staggering).
+ * @param type Optional category label (e.g., "Character", "Series").
+ * @param total Optional count of images for this tag.
+ * @param onClick Callback triggered when the suggestion is selected.
+ */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun SuggestionItem(
@@ -289,8 +327,11 @@ fun SuggestionItem(
     val isHovered by interactionSource.collectIsHoveredAsState()
 
     val backgroundColor by animateColorAsState(
-        if (isHighlighted || isHovered) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-        else Color.Transparent,
+        if (isHighlighted || isHovered) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+        } else {
+            Color.Transparent
+        },
         animationSpec = tween(150),
     )
 
@@ -300,26 +341,28 @@ fun SuggestionItem(
 
     AnimatedVisibility(
         visible = isVisible,
-        enter = slideInVertically(
-            initialOffsetY = { -20 },
-            animationSpec = tween(durationMillis = 200, delayMillis = (index * 30).coerceAtMost(150))
-        ) + fadeIn()
+        enter =
+            slideInVertically(
+                initialOffsetY = { -20 },
+                animationSpec = tween(durationMillis = 200, delayMillis = (index * 30).coerceAtMost(150)),
+            ) + fadeIn(),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(backgroundColor)
-                .hoverable(interactionSource)
-                .onPointerEvent(PointerEventType.Release) { 
-                    onClick()
-                }
-                .pointerHoverIcon(PointerIcon.Hand)
-                .padding(horizontal = 16.dp, vertical = 10.dp)
-                .semantics { 
-                    role = Role.Button
-                    contentDescription = "Search suggestion: $value"
-                },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(backgroundColor)
+                    .hoverable(interactionSource)
+                    .onPointerEvent(PointerEventType.Release) {
+                        onClick()
+                    }
+                    .pointerHoverIcon(PointerIcon.Hand)
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
+                    .semantics {
+                        role = Role.Button
+                        contentDescription = "Search suggestion: $value"
+                    },
         ) {
             Icon(
                 icon,
@@ -335,21 +378,21 @@ fun SuggestionItem(
                 fontWeight = if (isHighlighted) FontWeight.Bold else FontWeight.Normal,
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
             if (type != null) {
                 Text(
                     type,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                    modifier = Modifier.padding(horizontal = 8.dp),
                 )
             }
             if (total != null && total > 0) {
                 Text(
                     total.toString(),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 )
             }
         }

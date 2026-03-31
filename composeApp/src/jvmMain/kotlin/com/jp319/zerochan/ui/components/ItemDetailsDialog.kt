@@ -14,6 +14,16 @@ import com.jp319.zerochan.data.model.ZerochanFullItem
 import compose.icons.TablerIcons
 import compose.icons.tablericons.*
 
+/**
+ * A dialog displaying comprehensive metadata for a single Zerochan image.
+ * Includes dimensions, file size, source URL, and an interactive tag cloud.
+ *
+ * @param details The detailed metadata for the image, or null if loading.
+ * @param isLoading Whether the metadata fetch is currently in progress.
+ * @param onDismiss Callback to close the dialog.
+ * @param onDownload Callback to initiate a download of the full-resolution image.
+ * @param onSearchTag Callback to close this dialog and search for a specific tag.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ItemDetailsDialog(

@@ -10,7 +10,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -18,6 +17,28 @@ import compose.icons.TablerIcons
 import compose.icons.tablericons.*
 import kotlin.math.roundToInt
 
+/**
+ * The application's top navigation and control bar.
+ * Adapts between "Normal" mode (logo, search tools, settings) and "Contextual" mode
+ * (selection count, batch actions) based on the application state.
+ *
+ * @param burstCount Current number of API requests made in the last minute.
+ * @param selectedCount The number of images currently selected for batch operations.
+ * @param onDownloadClick Callback to download all selected items.
+ * @param onClearSelection Callback to deselect all items.
+ * @param onProfileClick Callback to open user settings.
+ * @param onLibraryClick Callback to open the local downloads library.
+ * @param onHelpClick Callback to open the user guide.
+ * @param isSelectionModeActive Whether the manual selection mode is currently enabled.
+ * @param onToggleSelectionMode Callback to enter/exit selection mode.
+ * @param zoomLevel The current display scale for the image grid.
+ * @param onZoomIn Callback to increase the grid scale.
+ * @param onZoomOut Callback to decrease the grid scale.
+ * @param onZoomReset Callback to return the grid scale to 100%.
+ * @param onMinimize Window control: Minimize to taskbar.
+ * @param onMaximizeToggle Window control: Toggle maximized/windowed state.
+ * @param onClose Window control: Exit the application.
+ */
 @Composable
 fun TopBar(
     burstCount: Int,
@@ -55,7 +76,7 @@ fun TopBar(
             transitionSpec = {
                 (fadeIn() + slideInVertically { it }).togetherWith(fadeOut() + slideOutVertically { -it })
             },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         ) { contextual ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -65,8 +86,11 @@ fun TopBar(
                     // SELECTION MODE ACTIVE (FULL BAR)
                     AppTooltip(text = "Clear Selection / Exit Mode") {
                         IconButton(onClick = {
-                            if (selectedCount > 0) onClearSelection()
-                            else onToggleSelectionMode()
+                            if (selectedCount > 0) {
+                                onClearSelection()
+                            } else {
+                                onToggleSelectionMode()
+                            }
                         }) {
                             Icon(TablerIcons.X, contentDescription = "Exit Selection Mode")
                         }
@@ -76,13 +100,13 @@ fun TopBar(
                             text = if (selectedCount > 0) "$selectedCount selected" else "Select images",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
                         if (selectedCount == 0) {
                             Text(
                                 "Click or drag to select",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
                             )
                         }
                     }
@@ -92,7 +116,7 @@ fun TopBar(
                             Button(
                                 onClick = onDownloadClick,
                                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
-                                modifier = Modifier.height(32.dp)
+                                modifier = Modifier.height(32.dp),
                             ) {
                                 Icon(TablerIcons.Download, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(8.dp))
@@ -145,21 +169,21 @@ fun TopBar(
                         IconButton(onClick = onZoomOut, modifier = Modifier.size(28.dp)) {
                             Icon(TablerIcons.Minus, null, modifier = Modifier.size(16.dp))
                         }
-                        
+
                         val zoomScale by animateFloatAsState(
                             targetValue = 1f,
                             animationSpec = spring(dampingRatio = 0.5f),
-                            label = "zoomLabelBounce"
+                            label = "zoomLabelBounce",
                         )
                         TextButton(
                             onClick = onZoomReset,
                             contentPadding = PaddingValues(0.dp),
-                            modifier = Modifier.widthIn(min = 48.dp).scale(zoomScale)
+                            modifier = Modifier.widthIn(min = 48.dp).scale(zoomScale),
                         ) {
                             Text(
                                 "${(zoomLevel * 100).roundToInt()}%",
                                 style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
                             )
                         }
 

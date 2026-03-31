@@ -9,6 +9,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
+/**
+ * An informational dialog providing a "Getting Started" guide for new users.
+ * Covers basic usage, searching, filtering, and multi-selection features.
+ *
+ * @param onDismiss Callback to close the guide dialog.
+ */
 @Composable
 fun GuideDialog(onDismiss: () -> Unit) {
     AlertDialog(

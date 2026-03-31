@@ -10,6 +10,12 @@ import org.jetbrains.compose.resources.painterResource
 import zerochan.composeapp.generated.resources.Res
 import zerochan.composeapp.generated.resources.logo
 
+/**
+ * Displays the application logo from the project resources.
+ *
+ * @param modifier Modifier to be applied to the logo image.
+ * @param size The display dimensions for the square logo icon.
+ */
 @Composable
 fun AppLogo(
     modifier: Modifier = Modifier,

@@ -10,6 +10,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
+/**
+ * A consistent tooltip component used throughout the application to
+ * provide additional context on interactive elements.
+ *
+ * @param text The string to display inside the tooltip.
+ * @param modifier Modifier to be applied to the tooltip area.
+ * @param content The composable content which triggers the tooltip on hover.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AppTooltip(

@@ -26,12 +26,13 @@ val MonokaiDark0 = Color(0xFF272822)
 val MonokaiDark1 = Color(0xFF383830)
 val MonokaiForeground = Color(0xFFF8F8F2)
 
-val LegacyThemeMap = mapOf(
-    "Purple" to "#BD93F9",
-    "Pink" to "#FF79C6",
-    "Cyan" to "#8BE9FD",
-    "Green" to "#50FA7B",
-    "Orange" to "#FFB86C",
-    "Red" to "#FF5555",
-    "Yellow" to "#F1FA8C"
-)
+val LegacyThemeMap =
+    mapOf(
+        "Purple" to "#BD93F9",
+        "Pink" to "#FF79C6",
+        "Cyan" to "#8BE9FD",
+        "Green" to "#50FA7B",
+        "Orange" to "#FFB86C",
+        "Red" to "#FF5555",
+        "Yellow" to "#F1FA8C",
+    )
