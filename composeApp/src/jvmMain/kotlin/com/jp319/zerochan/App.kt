@@ -4,13 +4,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material3.*
@@ -27,7 +22,10 @@ import com.jp319.zerochan.data.network.RequestTracker
 import com.jp319.zerochan.data.network.createHttpClient
 import com.jp319.zerochan.data.profile.ProfileManager
 import com.jp319.zerochan.data.repository.ZerochanRepository
-import com.jp319.zerochan.ui.components.*
+import com.jp319.zerochan.ui.components.GuideDialog
+import com.jp319.zerochan.ui.components.HslColorPicker
+import com.jp319.zerochan.ui.components.TopBar
+import com.jp319.zerochan.ui.components.ZerochanChip
 import com.jp319.zerochan.ui.screens.GalleryScreen
 import com.jp319.zerochan.ui.screens.GalleryViewModel
 import com.jp319.zerochan.ui.theme.*
@@ -269,7 +267,7 @@ fun ProfileDialog(
                 )
 
                 // --- HSL Color Picker ---
-                com.jp319.zerochan.ui.components.HslColorPicker(
+                HslColorPicker(
                     initialColor = parseHexColor(tempTheme, DraculaBurntOrange),
                     onColorChanged = { newColor ->
                         val argb = newColor.toArgb()
@@ -346,9 +344,6 @@ private fun MainScreen(
     val isUpdateAvailable by viewModel.isUpdateAvailable.collectAsState()
     val selectedIds by viewModel.selectedIdsForDownload.collectAsState()
     val isSelectionModeActive by viewModel.isSelectionModeActive.collectAsState()
-    val showDownloadsModal by viewModel.showDownloadsModal.collectAsState()
-    val localFiles by viewModel.localFiles.collectAsState()
-    val downloadQueue by viewModel.downloadQueue.collectAsState()
 
     if (showGuideDialog) {
         GuideDialog(
@@ -369,7 +364,6 @@ private fun MainScreen(
             },
         )
     }
-
 
     if (showProfileDialog) {
         ProfileDialog(

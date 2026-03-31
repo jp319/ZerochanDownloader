@@ -4,11 +4,12 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.staggeredgrid.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -16,11 +17,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.isCtrlPressed
-import androidx.compose.ui.input.pointer.isPrimaryPressed
-import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,7 +26,10 @@ import androidx.compose.ui.zIndex
 import com.jp319.zerochan.ui.components.*
 import com.jp319.zerochan.utils.FileUtil
 import compose.icons.TablerIcons
-import compose.icons.tablericons.*
+import compose.icons.tablericons.AlertTriangle
+import compose.icons.tablericons.Flag
+import compose.icons.tablericons.Plus
+import compose.icons.tablericons.Search
 
 /**
  * The primary screen of the application, responsible for displaying the image gallery,
@@ -115,7 +115,6 @@ fun GalleryScreen(
             }
     }
 
-
     if (viewingLocalFile != null) {
         LocalImageModal(
             file = viewingLocalFile,
@@ -149,11 +148,11 @@ fun GalleryScreen(
             error = updateError,
             onRetry = viewModel::downloadUpdateInstaller,
             onShowInFolder = { file ->
-                com.jp319.zerochan.utils.FileUtil.openFileNatively(file.parentFile)
+                FileUtil.openFileNatively(file.parentFile)
             },
             onOpenGitHub = {
                 val url = updateInfo?.releaseUrl ?: "https://github.com/jp319/ZerochanDownloader/releases/latest"
-                com.jp319.zerochan.utils.FileUtil.openWebpage(url)
+                FileUtil.openWebpage(url)
             },
             onDismiss = viewModel::dismissUpdateDialog,
             downloadedFile = downloadedInstallerPath,
@@ -213,13 +212,6 @@ fun GalleryScreen(
                 .onPointerEvent(PointerEventType.Press, pass = PointerEventPass.Initial) { event ->
                     // Capture start position as early as possible (Initial pass) for selection logic
                     dragStartPosition = event.changes.first().position
-                }
-                .onPointerEvent(PointerEventType.Press) { event ->
-                    // Clear focus and hide filters only if clicking outside interactive elements (Main pass)
-                    if (event.changes.any { !it.isConsumed }) {
-                        focusManager.clearFocus()
-                        viewModel.hideFilterPanel()
-                    }
                 },
     ) {
         // LAYER 1: THE GRID (Bottom Layer)
@@ -233,6 +225,14 @@ fun GalleryScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(top = gridPaddingTop)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = {
+                            focusManager.clearFocus()
+                            viewModel.hideFilterPanel()
+                        },
+                    )
                     .onPointerEvent(PointerEventType.Release) {
                         // Reset dragging state globally if needed
                         dragStartPosition = null

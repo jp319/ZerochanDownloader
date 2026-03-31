@@ -27,7 +27,7 @@ import kotlin.math.roundToInt
  * @param onDownloadClick Callback to download all selected items.
  * @param onClearSelection Callback to deselect all items.
  * @param onProfileClick Callback to open user settings.
- * @param onLibraryClick Callback to open the local downloads library.
+ * @param onLibraryClick Callback to open the local downloads' library.
  * @param onHelpClick Callback to open the user guide.
  * @param isSelectionModeActive Whether the manual selection mode is currently enabled.
  * @param onToggleSelectionMode Callback to enter/exit selection mode.

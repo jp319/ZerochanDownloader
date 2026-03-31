@@ -133,6 +133,13 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
             }
         }
         checkForUpdates()
+
+        // Clean up existing search history (remove empty strings)
+        val history = repository.profileManager.searchHistory
+        if (history.any { it.isBlank() }) {
+            repository.profileManager.searchHistory = history.filter { it.isNotBlank() }
+        }
+
         onHomeSearch() // Load default results on startup
     }
 
@@ -506,11 +513,13 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         clearSelection()
         _isSelectionModeActive.value = false
 
-        // Update search history
-        val currentHistory = repository.profileManager.searchHistory.toMutableList()
-        currentHistory.remove(query)
-        currentHistory.add(0, query)
-        repository.profileManager.searchHistory = currentHistory
+        // Update search history (exclude empty queries/Home search)
+        if (query.isNotBlank()) {
+            val currentHistory = repository.profileManager.searchHistory.toMutableList()
+            currentHistory.remove(query)
+            currentHistory.add(0, query)
+            repository.profileManager.searchHistory = currentHistory
+        }
 
         Logger.debug(TAG, "Searching for: $query")
         currentPage = 1

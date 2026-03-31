@@ -1,6 +1,6 @@
 package com.jp319.zerochan.ui.components
 
-import androidx.compose.animation.*
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -148,7 +148,7 @@ fun UpdateDownloadDialog(
                                 downloadedFile?.let { onShowInFolder(it) }
                             },
                             modifier = Modifier.fillMaxWidth(),
-                            enabled = state == UpdateDownloadState.SUCCESS && downloadedFile != null,
+                            enabled = downloadedFile != null,
                         ) {
                             Text("Show Installer Folder")
                         }

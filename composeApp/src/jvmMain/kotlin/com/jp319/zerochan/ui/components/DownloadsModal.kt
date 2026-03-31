@@ -66,18 +66,18 @@ fun DownloadsModal(
                 // HEADER
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Downloads Center",
                             style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
                         )
                         Text(
                             text = if (selectedTab == 0) "${localFiles.size} images cached" else "${downloadQueue.size} active tasks",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
 
@@ -96,10 +96,10 @@ fun DownloadsModal(
                     indicator = { tabPositions ->
                         TabRowDefaults.SecondaryIndicator(
                             Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
-                            color = MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     },
-                    modifier = Modifier.padding(horizontal = 24.dp)
+                    modifier = Modifier.padding(horizontal = 24.dp),
                 ) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
@@ -111,15 +111,19 @@ fun DownloadsModal(
                                         if (index == 1 && downloadQueue.any { it.state == DownloadState.DOWNLOADING || it.state == DownloadState.PREPARING }) {
                                             Badge(containerColor = MaterialTheme.colorScheme.primary)
                                         }
-                                    }
+                                    },
                                 ) {
                                     Text(
                                         title,
-                                        style = if (selectedTab == index) MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
-                                        else MaterialTheme.typography.titleSmall
+                                        style =
+                                            if (selectedTab == index) {
+                                                MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                            } else {
+                                                MaterialTheme.typography.titleSmall
+                                            },
                                     )
                                 }
-                            }
+                            },
                         )
                     }
                 }
@@ -172,7 +176,7 @@ private fun LibraryTabContent(
                     Text(
                         "Directory Usage: ${formatSize(folderSize)} • Free System Space: ${formatSize(freeSpace)} / ${formatSize(totalSpace)}",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
                 IconButton(onClick = { FileUtil.openFileNatively(currentDir) }) {
@@ -191,18 +195,19 @@ private fun LibraryTabContent(
             LazyVerticalGrid(
                 columns = GridCells.Adaptive(minSize = 160.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 items(localFiles, key = { it.absolutePath }) { file ->
                     AsyncImage(
                         model = file,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .aspectRatio(1f)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.DarkGray)
-                            .clickable { onImageClick(file) }
+                        modifier =
+                            Modifier
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.DarkGray)
+                                .clickable { onImageClick(file) },
                     )
                 }
             }
@@ -224,7 +229,7 @@ private fun DownloadManagerTabContent(
             Row(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                 horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 val hasStalled = queue.any { it.state == DownloadState.RETRY_STALLED || it.state == DownloadState.ERROR }
                 if (hasStalled) {
@@ -262,18 +267,22 @@ private fun DownloadManagerTabContent(
 }
 
 @Composable
-private fun DownloadManagerRow(job: DownloadJob, progressMap: Map<String, Float>, onRetry: (DownloadJob) -> Unit) {
+private fun DownloadManagerRow(
+    job: DownloadJob,
+    progressMap: Map<String, Float>,
+    onRetry: (DownloadJob) -> Unit,
+) {
     Surface(
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceContainerLow,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             AsyncImage(
                 model = job.item.thumbnail.replace(".avif", ".jpg"),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)).background(Color.DarkGray)
+                modifier = Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)).background(Color.DarkGray),
             )
 
             Spacer(Modifier.width(16.dp))
@@ -284,7 +293,7 @@ private fun DownloadManagerRow(job: DownloadJob, progressMap: Map<String, Float>
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
 
                 Spacer(Modifier.height(4.dp))
@@ -296,7 +305,7 @@ private fun DownloadManagerRow(job: DownloadJob, progressMap: Map<String, Float>
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             LinearProgressIndicator(
                                 progress = { animatedProgress },
-                                modifier = Modifier.weight(1f).height(6.dp).clip(CircleShape)
+                                modifier = Modifier.weight(1f).height(6.dp).clip(CircleShape),
                             )
                             Spacer(Modifier.width(8.dp))
                             Text("${(progress * 100).toInt()}%", style = MaterialTheme.typography.labelSmall)

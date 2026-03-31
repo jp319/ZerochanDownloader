@@ -18,14 +18,7 @@ import com.jp319.zerochan.data.model.DimensionFilter
 import com.jp319.zerochan.data.model.SortOrder
 import com.jp319.zerochan.data.model.TimeFilter
 import compose.icons.TablerIcons
-import compose.icons.tablericons.ArrowsSort
-import compose.icons.tablericons.Calendar
-import compose.icons.tablericons.Check
-import compose.icons.tablericons.ChevronDown
-import compose.icons.tablericons.Lock
-import compose.icons.tablericons.Maximize
-import compose.icons.tablericons.Palette
-import compose.icons.tablericons.X
+import compose.icons.tablericons.*
 
 /**
  * A panel containing various search filters such as sorting, time range,

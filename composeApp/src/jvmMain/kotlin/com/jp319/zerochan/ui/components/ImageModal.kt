@@ -25,11 +25,7 @@ import coil3.size.Size
 import com.jp319.zerochan.data.model.ZerochanItem
 import com.jp319.zerochan.data.network.DownloadProgressTracker
 import compose.icons.TablerIcons
-import compose.icons.tablericons.AlertTriangle
-import compose.icons.tablericons.CircleX
-import compose.icons.tablericons.Download
-import compose.icons.tablericons.InfoCircle
-import compose.icons.tablericons.Maximize
+import compose.icons.tablericons.*
 import org.jetbrains.compose.animatedimage.AnimatedImage
 import java.io.File
 
