@@ -1,9 +1,17 @@
 name: Publish to AUR
 
-# Only run this when a release is actually published (not drafted)
+# Only run this when a release is actually published or called as a reusable workflow
 on:
   release:
     types: [published]
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+    secrets:
+      AUR_SSH_PRIVATE_KEY:
+        required: true
 
 jobs:
   update-aur:
@@ -20,16 +28,26 @@ jobs:
       - name: Extract Version
         id: get_version
         run: |
-          # Strip the 'v' from the release tag (e.g., 'v1.0.2' becomes '1.0.2')
-          VERSION=${GITHUB_REF_NAME#v}
+          # Use input version if called via workflow_call, otherwise extract from tag
+          if [ -n "${{ inputs.version }}" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            VERSION=${GITHUB_REF_NAME#v}
+          fi
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "Version is $VERSION"
 
       - name: Calculate SHA256 of the new .deb file
         run: |
           # Download the newly released .deb file
-          DEB_URL="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/zerochan-downloader_${VERSION}_amd64.deb"
-          curl -L -o app.deb "$DEB_URL"
+          # We use -fL to fail if 404 and follow redirects
+          TAG_NAME=${{ github.ref_name }}
+          if [ -z "$TAG_NAME" ] || [ "$TAG_NAME" == "null" ]; then
+             TAG_NAME="v$VERSION"
+          fi
+          
+          DEB_URL="https://github.com/${{ github.repository }}/releases/download/$TAG_NAME/zerochan-downloader_${VERSION}_amd64.deb"
+          curl -fL -o app.deb "$DEB_URL"
           
           # Calculate the hash
           SHA256=$(sha256sum app.deb | awk '{print $1}')
@@ -39,7 +57,9 @@ jobs:
       - name: Setup SSH for AUR
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/aur
+          # Support both secret passing methods
+          AUR_KEY="${{ secrets.AUR_SSH_PRIVATE_KEY || secrets.AUR_SSH_PRIVATE_KEY }}"
+          echo "$AUR_KEY" > ~/.ssh/aur
           chmod 600 ~/.ssh/aur
           
           # Add AUR to known hosts so it doesn't get stuck asking "Are you sure?"

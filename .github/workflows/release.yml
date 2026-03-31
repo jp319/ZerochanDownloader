@@ -70,6 +70,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  publish-aur:
+    name: Sync to AUR
+    needs: build-linux
+    uses: ./.github/workflows/aur-publish.yml
+    with:
+      version: ${{ github.ref_name }} # e.g. v1.0.1
+    secrets:
+      AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+
   build-macos:
     name: Build macOS Installer
     runs-on: macos-latest
