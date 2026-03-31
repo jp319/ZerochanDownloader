@@ -7,19 +7,19 @@ import com.jp319.zerochan.data.repository.ZerochanRepository
 import com.jp319.zerochan.utils.FileUtil
 import com.jp319.zerochan.utils.Logger
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.*
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
 
-enum class DownloadState { PREPARING, DOWNLOADING, SUCCESS, ERROR }
+enum class DownloadState { PREPARING, DOWNLOADING, SUCCESS, ERROR, RETRY_STALLED }
 
 data class DownloadJob(
     val item: ZerochanItem,
     val resolvedUrl: String? = null,
     val state: DownloadState = DownloadState.PREPARING,
+    val retryCount: Int = 0,
+    val errorMessage: String? = null,
 )
 
 /**
@@ -92,6 +92,25 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
 
     private val _viewingLocalFile = MutableStateFlow<File?>(null)
     val viewingLocalFile = _viewingLocalFile.asStateFlow()
+
+    private val _showDownloadManager = MutableStateFlow(false)
+    val showDownloadManager = _showDownloadManager.asStateFlow()
+
+    private val downloadChannel = Channel<DownloadJob>(Channel.UNLIMITED)
+
+    /** Count of active downloads (Preparing or Downloading). */
+    val ongoingDownloadCount: StateFlow<Int> =
+        downloadQueue.map { queue ->
+            queue.count { it.state == DownloadState.PREPARING || it.state == DownloadState.DOWNLOADING }
+        }.stateIn(scope, SharingStarted.Lazily, 0)
+
+    init {
+        scope.launch {
+            for (job in downloadChannel) {
+                runDownloadSequentially(job)
+            }
+        }
+    }
 
     // --- Filter State ---
     private val _isFilterPanelVisible = MutableStateFlow(false)
@@ -447,22 +466,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
     ) {
         val job = DownloadJob(item, knownUrl)
         _downloadQueue.update { current -> current + job }
-
-        scope.launch {
-            try {
-                val downloadUrl = resolveDownloadUrl(item, knownUrl)
-                updateJobState(item.id, downloadUrl, DownloadState.DOWNLOADING)
-
-                val fileName = generateFileName(item, downloadUrl)
-                val file = repository.downloadImageToDisk(downloadUrl, fileName, currentDownloadDirectory)
-
-                if (file != null && _showDownloadsModal.value) loadLocalLibrary()
-                updateJobState(item.id, downloadUrl, if (file != null) DownloadState.SUCCESS else DownloadState.ERROR)
-            } catch (e: Exception) {
-                Logger.error(TAG, "Download failed for item ${item.id}", e)
-                updateJobState(item.id, knownUrl ?: "", DownloadState.ERROR)
-            }
-        }
+        processDownload(job)
     }
 
     /** Initiates downloads for all currently selected images. */
@@ -472,28 +476,81 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
 
         val itemsToDownload = _images.value.filter { it.id in selectedIds }
         clearSelection()
+        _isSelectionModeActive.value = false
 
         val newJobs = itemsToDownload.map { DownloadJob(it) }
         _downloadQueue.update { current -> current + newJobs }
 
-        scope.launch {
-            newJobs.forEach { downloadJob ->
-                try {
-                    val item = downloadJob.item
-                    val downloadUrl = resolveDownloadUrl(item, null)
+        newJobs.forEach { job ->
+            processDownload(job)
+        }
+    }
 
-                    updateJobState(item.id, downloadUrl, DownloadState.DOWNLOADING)
+    /** Re-attempts a stalled or failed download. */
+    fun retryDownload(job: DownloadJob) {
+        val updatedJob = job.copy(state = DownloadState.PREPARING, errorMessage = null)
+        _downloadQueue.update { queue ->
+            queue.map { if (it.item.id == job.item.id) updatedJob else it }
+        }
+        processDownload(updatedJob)
+    }
 
-                    val fileName = generateFileName(item, downloadUrl)
-                    val file = repository.downloadImageToDisk(downloadUrl, fileName, currentDownloadDirectory)
+    /** Re-attempts all stalled or failed downloads in the current queue. */
+    fun retryAllDownloads() {
+        val stalledJobs = _downloadQueue.value.filter { it.state == DownloadState.RETRY_STALLED || it.state == DownloadState.ERROR }
+        stalledJobs.forEach { retryDownload(it) }
+    }
 
-                    if (file != null && _showDownloadsModal.value) loadLocalLibrary()
-                    updateJobState(item.id, downloadUrl, if (file != null) DownloadState.SUCCESS else DownloadState.ERROR)
-                } catch (e: Exception) {
-                    Logger.error(TAG, "Batch download failed for item ${downloadJob.item.id}", e)
-                    updateJobState(downloadJob.item.id, "", DownloadState.ERROR)
+    private fun processDownload(job: DownloadJob) {
+        downloadChannel.trySend(job)
+    }
+
+    /** Toggles the visibility of the Download Manager modal. */
+    fun toggleDownloadManager(show: Boolean? = null) {
+        _showDownloadManager.update { show ?: !it }
+    }
+
+    private suspend fun runDownloadSequentially(job: DownloadJob) {
+        try {
+            val downloadUrl = resolveDownloadUrl(job.item, job.resolvedUrl)
+            if (downloadUrl == null) {
+                val newRetryCount = job.retryCount + 1
+                if (newRetryCount >= 3) {
+                    updateJobState(
+                        id = job.item.id,
+                        url = "",
+                        newState = DownloadState.ERROR,
+                        retryCount = newRetryCount,
+                        error = "App might be blocked or try again at a later time.",
+                    )
+                } else {
+                    updateJobState(
+                        id = job.item.id,
+                        url = "",
+                        newState = DownloadState.RETRY_STALLED,
+                        retryCount = newRetryCount,
+                        error = "Full-res not found",
+                    )
                 }
+                return
             }
+
+            updateJobState(job.item.id, downloadUrl, DownloadState.DOWNLOADING, job.retryCount)
+
+            val fileName = generateFileName(job.item, downloadUrl)
+            val file = repository.downloadImageToDisk(downloadUrl, fileName, currentDownloadDirectory)
+
+            if (file != null && _showDownloadsModal.value) loadLocalLibrary()
+
+            updateJobState(
+                id = job.item.id,
+                url = downloadUrl,
+                newState = if (file != null) DownloadState.SUCCESS else DownloadState.ERROR,
+                retryCount = job.retryCount,
+            )
+        } catch (e: Exception) {
+            Logger.error(TAG, "Download failed for item ${job.item.id}", e)
+            updateJobState(job.item.id, job.resolvedUrl ?: "", DownloadState.ERROR, job.retryCount, e.message)
         }
     }
 
@@ -504,7 +561,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
     private suspend fun resolveDownloadUrl(
         item: ZerochanItem,
         knownUrl: String?,
-    ): String {
+    ): String? {
         val sanitizedKnown =
             knownUrl?.let { url ->
                 when {
@@ -517,7 +574,6 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
 
         return sanitizedKnown
             ?: repository.findValidFullResUrl(item.id, item.tag)
-            ?: item.thumbnail.replace(".avif", ".jpg")
     }
 
     /** Generates a safe, descriptive filename for a Zerochan image. */
@@ -540,10 +596,21 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         id: Int,
         url: String,
         newState: DownloadState,
+        retryCount: Int = 0,
+        error: String? = null,
     ) {
         _downloadQueue.update { queue ->
             queue.map { entry ->
-                if (entry.item.id == id) entry.copy(resolvedUrl = url, state = newState) else entry
+                if (entry.item.id == id) {
+                    entry.copy(
+                        resolvedUrl = url,
+                        state = newState,
+                        retryCount = retryCount,
+                        errorMessage = error,
+                    )
+                } else {
+                    entry
+                }
             }
         }
     }

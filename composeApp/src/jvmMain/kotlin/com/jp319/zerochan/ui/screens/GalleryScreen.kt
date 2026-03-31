@@ -60,6 +60,8 @@ fun GalleryScreen(
     val selectedIds by viewModel.selectedIdsForDownload.collectAsState()
     val verifiedUrl by viewModel.verifiedFullResUrl.collectAsState()
     val downloadQueue by viewModel.downloadQueue.collectAsState()
+    val showDownloadManager by viewModel.showDownloadManager.collectAsState()
+    val ongoingDownloadCount by viewModel.ongoingDownloadCount.collectAsState()
     val focusManager = LocalFocusManager.current
 
     val itemDetails by viewModel.selectedItemDetails.collectAsState()
@@ -110,6 +112,15 @@ fun GalleryScreen(
     }
 
     // --- Modals & Overlays ---
+    DownloadManagerDialog(
+        show = showDownloadManager,
+        queue = downloadQueue,
+        onDismiss = { viewModel.toggleDownloadManager(false) },
+        onClearCompleted = viewModel::clearCompletedDownloads,
+        onRetry = viewModel::retryDownload,
+        onRetryAll = viewModel::retryAllDownloads,
+    )
+
     LocalImageModal(
         file = viewingLocalFile,
         onDismiss = viewModel::closeLocalFile,
@@ -383,27 +394,29 @@ fun GalleryScreen(
                         viewModel.toggleFilterPanel()
                     },
                     onRefresh = viewModel::onRefresh,
+                    ongoingDownloadCount = ongoingDownloadCount,
+                    onToggleDownloadManager = { viewModel.toggleDownloadManager() },
                     filterContent = {
-                        FilterPanel(
-                            sortOrder = sortOrder, onSortChange = viewModel::setSortOrder,
-                            timeFilter = timeFilter, onTimeChange = viewModel::setTimeFilter,
-                            dimensionFilter = dimensionFilter, onDimensionChange = viewModel::setDimensionFilter,
-                            strictMode = strictMode, onStrictToggle = viewModel::toggleStrictMode,
-                            onClearFilters = viewModel::clearFilters,
-                            colorFilter = colorFilter, onColorChange = viewModel::setColorFilter,
-                        )
+                        if (isFilterPanelVisible) {
+                            FilterPanel(
+                                sortOrder = sortOrder,
+                                onSortChange = viewModel::setSortOrder,
+                                timeFilter = timeFilter,
+                                onTimeChange = viewModel::setTimeFilter,
+                                dimensionFilter = dimensionFilter,
+                                onDimensionChange = viewModel::setDimensionFilter,
+                                colorFilter = colorFilter,
+                                onColorChange = viewModel::setColorFilter,
+                                strictMode = strictMode,
+                                onStrictToggle = viewModel::toggleStrictMode,
+                                onClearFilters = viewModel::clearFilters,
+                            )
+                        }
                     },
                     modifier = Modifier.widthIn(max = 700.dp),
                 )
             }
         }
-
-        // LAYER 3: OVERLAYS
-        DownloadQueueOverlay(
-            downloadQueue = downloadQueue,
-            onClearCompleted = viewModel::clearCompletedDownloads,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
-        )
     }
 }
 
@@ -434,28 +447,6 @@ fun StateMessage(
         Text(title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(8.dp))
         Text(description, style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-/**
- * A floating overlay that displays the active download items and their progress.
- *
- * @param downloadQueue The list of active and pending download jobs.
- * @param onClearCompleted Callback to remove finished jobs from the queue.
- */
-@Composable
-private fun DownloadQueueOverlay(
-    downloadQueue: List<DownloadJob>,
-    onClearCompleted: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    AnimatedVisibility(
-        visible = downloadQueue.isNotEmpty(),
-        enter = slideInVertically(initialOffsetY = { it }),
-        exit = slideOutVertically(targetOffsetY = { it }),
-        modifier = modifier,
-    ) {
-        DownloadQueuePanel(queue = downloadQueue, onClearCompleted = onClearCompleted)
     }
 }
 

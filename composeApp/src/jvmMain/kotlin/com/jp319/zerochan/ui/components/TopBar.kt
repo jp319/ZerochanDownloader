@@ -208,7 +208,7 @@ fun TopBar(
                     }
                     AppTooltip(text = "Local Library") {
                         IconButton(onClick = onLibraryClick) {
-                            Icon(TablerIcons.Download, contentDescription = "Local Library", tint = MaterialTheme.colorScheme.primary)
+                            Icon(TablerIcons.Folder, contentDescription = "Local Library", tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                     AppTooltip(text = "Profile Settings") {

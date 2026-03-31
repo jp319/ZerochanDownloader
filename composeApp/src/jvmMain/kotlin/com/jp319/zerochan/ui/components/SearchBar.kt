@@ -65,6 +65,8 @@ fun SearchBar(
     isFilterPanelVisible: Boolean,
     onToggleFilters: () -> Unit,
     onRefresh: () -> Unit,
+    ongoingDownloadCount: Int,
+    onToggleDownloadManager: () -> Unit,
     filterContent: @Composable ColumnScope.() -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -204,6 +206,34 @@ fun SearchBar(
                     }
 
                     VerticalDivider(modifier = Modifier.height(24.dp).padding(horizontal = 8.dp))
+
+                    AppTooltip(text = "Download Manager") {
+                        BadgedBox(
+                            badge = {
+                                if (ongoingDownloadCount > 0) {
+                                    Badge(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                                    ) {
+                                        Text(ongoingDownloadCount.toString())
+                                    }
+                                }
+                            },
+                            modifier = Modifier.padding(end = 8.dp),
+                        ) {
+                            IconButton(
+                                onClick = onToggleDownloadManager,
+                                modifier = Modifier.size(28.dp),
+                            ) {
+                                Icon(
+                                    TablerIcons.Download,
+                                    contentDescription = "Downloads",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = if (ongoingDownloadCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
 
                     AppTooltip(text = if (isFilterPanelVisible) "Hide Filters" else "Show Filters") {
                         IconButton(

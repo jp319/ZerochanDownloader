@@ -104,8 +104,8 @@ fun FilterPanel(
                 icon = TablerIcons.ArrowsSort,
                 label = "Sort",
                 currentValue = if (sortOrder == SortOrder.Favorites) "Popular" else "Recent",
-                isDefault = sortOrder == null,
-                options = listOf("Recent" to null, "Popular" to SortOrder.Favorites),
+                isDefault = sortOrder == null || sortOrder == SortOrder.Id,
+                options = listOf("Recent" to SortOrder.Id, "Popular" to SortOrder.Favorites),
                 onSelect = onSortChange,
             )
 
@@ -127,7 +127,15 @@ fun FilterPanel(
                 label = "Size",
                 currentValue = dimensionFilter?.name ?: "Any",
                 isDefault = dimensionFilter == null,
-                options = listOf("Any" to null, "Large" to DimensionFilter.Large, "Landscape" to DimensionFilter.Landscape, "Portrait" to DimensionFilter.Portrait),
+                options =
+                    listOf(
+                        "Any" to null,
+                        "Large" to DimensionFilter.Large,
+                        "Huge" to DimensionFilter.Huge,
+                        "Landscape" to DimensionFilter.Landscape,
+                        "Portrait" to DimensionFilter.Portrait,
+                        "Square" to DimensionFilter.Square,
+                    ),
                 onSelect = onDimensionChange,
             )
 
