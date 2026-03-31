@@ -16,12 +16,12 @@ ktlint {
     }
 }
 
-val packageVersion = (project.findProperty("appVersion") as? String) ?: "1.0.2"
+val packageVersionLatest = (project.findProperty("appVersion") as? String) ?: "1.0.2"
 
 // Task to generate BuildConfig file
 val generateBuildConfig =
     tasks.register("generateBuildConfig") {
-        val version = packageVersion
+        val version = packageVersionLatest
         val outputDir = layout.buildDirectory.dir("generated/buildConfig/kotlin/com/jp319/zerochan")
 
         inputs.property("version", version)
@@ -100,7 +100,7 @@ compose.desktop {
             jvmArgs("--sun-misc-unsafe-memory-access=allow")
 
             packageName = "Zerochan Downloader"
-            this.packageVersion = packageVersion
+            packageVersion = packageVersionLatest
             vendor = "John Fritz P. Antipuesto"
             description = "A beautiful desktop client for Zerochan."
             copyright = "© 2026 John Fritz P. Antipuesto"
