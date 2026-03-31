@@ -11,6 +11,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
@@ -70,6 +72,10 @@ fun GalleryScreen(
     val dimensionFilter by viewModel.dimensionFilter.collectAsState()
     val strictMode by viewModel.strictMode.collectAsState()
     val colorFilter by viewModel.colorFilter.collectAsState()
+    
+    // --- Drag-to-select Bounding Box State (Bug 5) ---
+    var dragStartPosition by remember { mutableStateOf<Offset?>(null) }
+    var currentDragPosition by remember { mutableStateOf(Offset.Zero) }
 
     // --- Scroll Hide/Show Logic (ENH 5) ---
     var lastScrollOffset by remember { mutableStateOf(0) }
@@ -162,7 +168,13 @@ fun GalleryScreen(
     Box(
         modifier =
             modifier
-                .fillMaxSize(),
+                .fillMaxSize()
+                .onPointerEvent(PointerEventType.Press) { event ->
+                    if (event.changes.any { !it.isConsumed }) {
+                        focusManager.clearFocus()
+                        viewModel.hideFilterPanel()
+                    }
+                },
     ) {
         // LAYER 1: THE GRID (Bottom Layer)
         val gridPaddingTop by animateDpAsState(
@@ -182,6 +194,7 @@ fun GalleryScreen(
                     }
                     .onPointerEvent(PointerEventType.Release) {
                         // Reset dragging state globally if needed
+                        dragStartPosition = null
                         viewModel.endDragSelection()
                     }
                     .onPointerEvent(PointerEventType.Scroll) { event ->
@@ -233,20 +246,39 @@ fun GalleryScreen(
                         modifier =
                             Modifier
                                 .fillMaxSize()
-                                .onPointerEvent(PointerEventType.Move, PointerEventPass.Initial) { event ->
-                                    // Drag-to-select logic (Enhanced with toggle)
+                                .onPointerEvent(PointerEventType.Move) { event ->
+                                    // Drag-to-select logic (Bug 5: Bounding Box)
                                     val isModeActive = isSelectionModeActive || selectedIds.isNotEmpty()
                                     if (isModeActive && event.buttons.isPrimaryPressed) {
-                                        val position = event.changes.first().position
+                                        val currentPos = event.changes.first().position
+                                        if (dragStartPosition == null) {
+                                            dragStartPosition = currentPos
+                                        }
+                                        currentDragPosition = currentPos
+
+                                        val start = dragStartPosition!!
+                                        val rect = Rect(
+                                            left = minOf(start.x, currentPos.x),
+                                            top = minOf(start.y, currentPos.y),
+                                            right = maxOf(start.x, currentPos.x),
+                                            bottom = maxOf(start.y, currentPos.y)
+                                        )
+
+                                        val hoveredIds = mutableSetOf<Int>()
                                         gridState.layoutInfo.visibleItemsInfo.forEach { item ->
-                                            if (position.x in item.offset.x.toFloat()..(item.offset.x + item.size.width).toFloat() &&
-                                                position.y in item.offset.y.toFloat()..(item.offset.y + item.size.height).toFloat()
-                                            ) {
+                                            val itemRect = Rect(
+                                                left = item.offset.x.toFloat(),
+                                                top = item.offset.y.toFloat(),
+                                                right = (item.offset.x + item.size.width).toFloat(),
+                                                bottom = (item.offset.y + item.size.height).toFloat()
+                                            )
+                                            if (rect.overlaps(itemRect)) {
                                                 (item.key as? Int)?.let { id ->
-                                                    viewModel.updateDragSelection(id)
+                                                    hoveredIds.add(id)
                                                 }
                                             }
                                         }
+                                        viewModel.updateDragSelectionWithSet(hoveredIds)
                                     }
                                 },
                     ) {
@@ -330,6 +362,7 @@ fun GalleryScreen(
                         focusManager.clearFocus()
                         viewModel.toggleFilterPanel()
                     },
+                    onRefresh = viewModel::onRefresh,
                     filterContent = {
                         FilterPanel(
                             sortOrder = sortOrder, onSortChange = viewModel::setSortOrder,

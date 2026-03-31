@@ -15,6 +15,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowScope
@@ -35,6 +37,16 @@ import zerochan.composeapp.generated.resources.Res
 import zerochan.composeapp.generated.resources.logo
 import kotlin.time.Duration.Companion.milliseconds
 
+private fun parseHexColor(hex: String, fallback: Color): Color {
+    try {
+        val clean = if (hex.startsWith("#")) hex.substring(1) else hex
+        val argb = if (clean.length == 6) java.lang.Long.parseLong("FF$clean", 16) else java.lang.Long.parseLong(clean, 16)
+        return Color(argb)
+    } catch (e: Exception) {
+        return fallback
+    }
+}
+
 @Composable
 @Preview
 fun App(
@@ -45,8 +57,9 @@ fun App(
 ) {
     val profileManager = remember { ProfileManager() }
     var currentTheme by remember { mutableStateOf(profileManager.themePreference) }
+    var currentThemeMode by remember { mutableStateOf(profileManager.themeMode) }
 
-    AppTheme(themePreference = currentTheme) {
+    AppTheme(themePreference = currentTheme, themeMode = currentThemeMode) {
         var showSplash by remember { mutableStateOf(true) }
 
         Box(Modifier.fillMaxSize()) {
@@ -58,9 +71,14 @@ fun App(
                 MainScreen(
                     profileManager = profileManager,
                     currentTheme = currentTheme,
+                    currentThemeMode = currentThemeMode,
                     onThemeChange = { newTheme ->
                         currentTheme = newTheme
                         profileManager.themePreference = newTheme
+                    },
+                    onThemeModeChange = { newMode ->
+                        currentThemeMode = newMode
+                        profileManager.themeMode = newMode
                     },
                     windowScope = windowScope,
                     onMinimize = onMinimize,
@@ -106,23 +124,24 @@ private fun SplashScreen(onFinished: () -> Unit) {
 fun ProfileDialog(
     profileManager: ProfileManager,
     currentTheme: String,
+    currentThemeMode: String,
     onThemeChange: (String) -> Unit,
+    onThemeModeChange: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var tempUsername by remember { mutableStateOf(profileManager.username) }
     var tempTheme by remember { mutableStateOf(currentTheme) }
+    var tempThemeMode by remember { mutableStateOf(currentThemeMode) }
 
-    val themes = listOf("Orange", "Purple", "Pink", "Green", "Red", "Yellow", "Cyan")
-    val themeColors =
-        listOf(
-            DraculaBurntOrange,
-            DraculaPurple,
-            DraculaPink,
-            DraculaGreen,
-            DraculaRed,
-            DraculaYellow,
-            DraculaCyan,
-        )
+    val themePresets = listOf(
+        "Orange" to DraculaBurntOrange, 
+        "Purple" to DraculaPurple,
+        "Pink" to DraculaPink,
+        "Green" to DraculaGreen,
+        "Red" to DraculaRed,
+        "Yellow" to DraculaYellow,
+        "Cyan" to DraculaCyan
+    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -150,17 +169,45 @@ fun ProfileDialog(
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    "Theme Color",
+                    "Appearance",
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(bottom = 12.dp),
                 )
+                
+                // Theme Mode Selection
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val modes = listOf("Dark", "Light", "AMOLED")
+                    modes.forEach { mode ->
+                        val isSelected = tempThemeMode == mode
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { 
+                                tempThemeMode = mode
+                                onThemeModeChange(mode)
+                            },
+                            label = { Text(mode) },
+                            leadingIcon = if (isSelected) {
+                                { Icon(TablerIcons.Check, null, Modifier.size(16.dp)) }
+                            } else null
+                        )
+                    }
+                }
+
+                Text(
+                    "Preset Themes",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                 ) {
-                    themes.forEachIndexed { index, themeName ->
-                        val color = themeColors[index]
-                        val isSelected = tempTheme == themeName
+                    themePresets.forEach { (name, color) ->
+                        val isSelected = tempTheme == LegacyThemeMap[name] || tempTheme == name
                         Surface(
                             shape = CircleShape,
                             color = color,
@@ -168,9 +215,8 @@ fun ProfileDialog(
                                 Modifier
                                     .size(32.dp)
                                     .clickable {
-                                        tempTheme = themeName
-                                        // Apply theme immediately
-                                        onThemeChange(themeName)
+                                        tempTheme = LegacyThemeMap[name] ?: name
+                                        onThemeChange(tempTheme)
                                     },
                             border =
                                 if (isSelected) {
@@ -192,6 +238,35 @@ fun ProfileDialog(
                             }
                         }
                     }
+                }
+                
+                Text(
+                    "Custom Color",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                
+                // --- HSL Color Picker ---
+                com.jp319.zerochan.ui.components.HslColorPicker(
+                    initialColor = parseHexColor(tempTheme, DraculaBurntOrange),
+                    onColorChanged = { newColor ->
+                        val argb = newColor.toArgb()
+                        val hex = String.format("#%06X", (0xFFFFFF and argb))
+                        tempTheme = hex
+                        onThemeChange(hex)
+                    },
+                    modifier = Modifier.fillMaxWidth().height(200.dp).padding(horizontal = 16.dp)
+                )
+                
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
+                    Surface(
+                        modifier = Modifier.size(24.dp),
+                        shape = CircleShape,
+                        color = parseHexColor(tempTheme, DraculaBurntOrange),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                    ) {}
+                    Spacer(Modifier.width(8.dp))
+                    Text(tempTheme, style = MaterialTheme.typography.labelMedium)
                 }
             }
         },
@@ -220,7 +295,9 @@ fun ProfileDialog(
 private fun MainScreen(
     profileManager: ProfileManager,
     currentTheme: String,
+    currentThemeMode: String,
     onThemeChange: (String) -> Unit,
+    onThemeModeChange: (String) -> Unit,
     windowScope: WindowScope?,
     onMinimize: () -> Unit,
     onMaximizeToggle: () -> Unit,
@@ -261,7 +338,9 @@ private fun MainScreen(
         ProfileDialog(
             profileManager = profileManager,
             currentTheme = currentTheme,
+            currentThemeMode = currentThemeMode,
             onThemeChange = onThemeChange,
+            onThemeModeChange = onThemeModeChange,
             onDismiss = { showProfileDialog = false },
         )
     }

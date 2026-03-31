@@ -12,6 +12,7 @@ ktor = "3.4.1"
 kotlinxSerialization = "1.7.3"
 ktlint = "12.1.2"
 slf4j = "2.0.12"
+material-color-utilities = "5.0.0-alpha07"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -37,6 +38,7 @@ ktor-serialization-json   = { module = "io.ktor:ktor-serialization-kotlinx-json"
 kotlinx-serialization     = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 compose-components-animatedImage = { module = "org.jetbrains.compose.components:components-animatedimage", version.ref = "composeMultiplatform" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+material-color-utilities = { module = "com.materialkolor:material-color-utilities", version.ref = "material-color-utilities" }
 
 [plugins]
 composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "composeHotReload" }

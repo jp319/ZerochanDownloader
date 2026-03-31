@@ -38,6 +38,7 @@ kotlin {
             implementation(libs.ktor.client.negotiation)
             implementation(libs.ktor.serialization.json)
             implementation(libs.kotlinx.serialization)
+            implementation(libs.material.color.utilities)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

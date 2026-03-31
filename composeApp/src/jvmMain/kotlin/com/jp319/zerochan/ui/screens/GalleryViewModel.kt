@@ -111,7 +111,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
     // --- Drag-to-select tracking ---
     private var isDragging = false
     private var dragInitialStateIsSelect = true // true = selecting, false = deselecting
-    private val draggedIdsInCurrentSession = mutableSetOf<Int>()
+    private var preExistingSelection = emptySet<Int>()
 
     // -------------------------------------------------------------------------
     // Filter Panel
@@ -191,22 +191,23 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
 
     fun startDragSelection(id: Int) {
         isDragging = true
-        draggedIdsInCurrentSession.clear()
-        dragInitialStateIsSelect = !_selectedIdsForDownload.value.contains(id)
-        updateDragSelection(id)
+        preExistingSelection = _selectedIdsForDownload.value
+        dragInitialStateIsSelect = !preExistingSelection.contains(id)
     }
 
-    fun updateDragSelection(id: Int) {
-        if (!isDragging || draggedIdsInCurrentSession.contains(id)) return
-        draggedIdsInCurrentSession.add(id)
-        _selectedIdsForDownload.update { current ->
-            if (dragInitialStateIsSelect) current + id else current - id
+    fun updateDragSelectionWithSet(idsUnderDrag: Set<Int>) {
+        if (!isDragging) return
+        _selectedIdsForDownload.update {
+            if (dragInitialStateIsSelect) {
+                preExistingSelection + idsUnderDrag
+            } else {
+                preExistingSelection - idsUnderDrag
+            }
         }
     }
 
     fun endDragSelection() {
         isDragging = false
-        draggedIdsInCurrentSession.clear()
     }
 
     fun clearSelection() {
@@ -302,6 +303,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
 
         Logger.debug(logTAG, "Searching for: $query")
         currentPage = 1
+        _isEndOfPaginationReached.update { false }
 
         scope.launch {
             _isSearching.update { true }
@@ -313,9 +315,6 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
                 repository.search(getCurrentApiParams(currentPage))
             }.onSuccess { items ->
                 _images.update { items.distinctBy { it.id } }
-                if (items.isEmpty()) {
-                    _isEndOfPaginationReached.update { true }
-                }
             }.onFailure { e ->
                 if (e is NoUsernameException) {
                     _isUsernameMissing.update { true }
@@ -327,6 +326,10 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
             _isSearching.update { false }
             _isLoading.update { false }
         }
+    }
+
+    fun onRefresh() {
+        onSearch(_query.value)
     }
 
     fun onLoadMore() {

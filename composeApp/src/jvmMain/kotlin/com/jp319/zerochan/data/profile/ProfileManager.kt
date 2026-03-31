@@ -68,6 +68,16 @@ class ProfileManager {
     }
 
     /**
+     * User's preferred theme mode: "Light", "Dark", or "AMOLED".
+     */
+    var themeMode: String
+        get() = prefs.get(KEY_THEME_MODE, "Dark")
+        set(value) {
+            prefs.put(KEY_THEME_MODE, value)
+            prefs.flush()
+        }
+
+    /**
      * Property for observing or updating the user's theme color preference.
      */
     var themePreference: String
@@ -93,6 +103,7 @@ class ProfileManager {
         private const val KEY_DOWNLOAD_DIR = "download_directory"
         private const val KEY_SEARCH_HISTORY = "search_history"
         private const val KEY_THEME_PREFERENCE = "theme_preference"
+        private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_IS_FIRST_LAUNCH = "is_first_launch"
     }
 }

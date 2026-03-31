@@ -14,3 +14,13 @@ val DraculaBackground = Color(0xFF282A36)
 val DraculaCurrentLine = Color(0xFF44475A)
 val DraculaForeground = Color(0xFFF8F8F2)
 val DraculaComment = Color(0xFF6272A4)
+
+val LegacyThemeMap = mapOf(
+    "Purple" to "#BD93F9",
+    "Pink" to "#FF79C6",
+    "Cyan" to "#8BE9FD",
+    "Green" to "#50FA7B",
+    "Orange" to "#FFB86C",
+    "Red" to "#FF5555",
+    "Yellow" to "#F1FA8C"
+)

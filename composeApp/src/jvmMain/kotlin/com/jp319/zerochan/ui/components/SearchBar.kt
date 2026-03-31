@@ -5,6 +5,9 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -22,10 +25,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.*
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.PointerIcon
-import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -46,6 +46,7 @@ fun SearchBar(
     isLoading: Boolean,
     isFilterPanelVisible: Boolean,
     onToggleFilters: () -> Unit,
+    onRefresh: () -> Unit,
     filterContent: @Composable ColumnScope.() -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -72,6 +73,10 @@ fun SearchBar(
                     isFocused = it.isFocused
                     onFocusChanged(it.isFocused)
                     if (!it.isFocused) focusedIndex = -1
+                }
+                .onPointerEvent(PointerEventType.Press) {
+                    // Consume to prevent root box from clearing focus when clicking inside search bar
+                    it.changes.forEach { change -> change.consume() }
                 }
                 .onPreviewKeyEvent { event ->
                     // --- ENH 1: Escape key support ---
@@ -140,7 +145,7 @@ fun SearchBar(
                             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .semantics { 
+                                .semantics {
                                     contentDescription = "Search input"
                                 },
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -150,13 +155,17 @@ fun SearchBar(
                     }
 
                     if (query.isNotEmpty()) {
-                        AppTooltip(text = "Clear Search") {
-                            IconButton(
-                                onClick = { onQueryChange("") },
-                                modifier = Modifier.size(28.dp),
-                            ) {
-                                Icon(TablerIcons.X, contentDescription = "Clear", modifier = Modifier.size(16.dp))
-                            }
+                        IconButton(onClick = { onQueryChange("") }, modifier = Modifier.size(28.dp)) {
+                            Icon(TablerIcons.X, contentDescription = "Clear", modifier = Modifier.size(16.dp))
+                        }
+                    }
+
+                    AppTooltip(text = "Refresh Results") {
+                        IconButton(
+                            onClick = onRefresh,
+                            modifier = Modifier.size(28.dp),
+                        ) {
+                            Icon(TablerIcons.Refresh, contentDescription = "Refresh", modifier = Modifier.size(16.dp))
                         }
                     }
 
@@ -267,7 +276,8 @@ fun SuggestionItem(
     total: Int? = null,
     onClick: () -> Unit,
 ) {
-    var isHovered by remember { mutableStateOf(false) }
+    val interactionSource = remember { MutableInteractionSource() }
+    val isHovered by interactionSource.collectIsHoveredAsState()
 
     val backgroundColor by animateColorAsState(
         if (isHighlighted || isHovered) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
@@ -291,8 +301,7 @@ fun SuggestionItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(backgroundColor)
-                .onPointerEvent(PointerEventType.Enter) { isHovered = true }
-                .onPointerEvent(PointerEventType.Exit) { isHovered = false }
+                .hoverable(interactionSource)
                 .onPointerEvent(PointerEventType.Release) { 
                     onClick()
                 }
