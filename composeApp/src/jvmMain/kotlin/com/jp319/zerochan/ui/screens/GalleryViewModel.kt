@@ -183,49 +183,50 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
             return
         }
 
-        updateDownloadJob = scope.launch {
-            _updateDownloadState.value = UpdateDownloadState.DOWNLOADING
-            _updateDownloadProgress.value = 0f
-            _updateError.value = null
+        updateDownloadJob =
+            scope.launch {
+                _updateDownloadState.value = UpdateDownloadState.DOWNLOADING
+                _updateDownloadProgress.value = 0f
+                _updateError.value = null
 
-            val tempDir = File(System.getProperty("java.io.tmpdir"), "zerochan-updates")
-            val targetFile = File(tempDir, info.installerName ?: "ZerochanDownloader-Update.exe")
+                val tempDir = File(System.getProperty("java.io.tmpdir"), "zerochan-updates")
+                val targetFile = File(tempDir, info.installerName ?: "ZerochanDownloader-Update.exe")
 
-            // --- EXISTING FILE INTEGRITY CHECK (Bug 1 Refined) ---
-            // Only skip if the file exists AND its size exactly matches the expected installer size.
-            if (targetFile.exists() && info.installerSize > 0 && targetFile.length() == info.installerSize) {
-                Logger.info(TAG, "Full installer for version ${info.latestVersion} already exists locally. Skipping download.")
-                _downloadedInstallerPath.value = targetFile
-                _updateDownloadProgress.value = 1f
-                _updateDownloadState.value = UpdateDownloadState.SUCCESS
-                return@launch
-            }
+                // --- EXISTING FILE INTEGRITY CHECK (Bug 1 Refined) ---
+                // Only skip if the file exists AND its size exactly matches the expected installer size.
+                if (targetFile.exists() && info.installerSize > 0 && targetFile.length() == info.installerSize) {
+                    Logger.info(TAG, "Full installer for version ${info.latestVersion} already exists locally. Skipping download.")
+                    _downloadedInstallerPath.value = targetFile
+                    _updateDownloadProgress.value = 1f
+                    _updateDownloadState.value = UpdateDownloadState.SUCCESS
+                    return@launch
+                }
 
-            var success = false
-            for (attempt in 1..3) {
-                Logger.info(TAG, "Download attempt $attempt for update...")
-                val file =
-                    repository.downloadInstaller(url, targetFile) { progress ->
-                        _updateDownloadProgress.value = progress
+                var success = false
+                for (attempt in 1..3) {
+                    Logger.info(TAG, "Download attempt $attempt for update...")
+                    val file =
+                        repository.downloadInstaller(url, targetFile) { progress ->
+                            _updateDownloadProgress.value = progress
+                        }
+
+                    if (file != null && file.exists()) {
+                        _downloadedInstallerPath.value = file
+                        _updateDownloadState.value = UpdateDownloadState.SUCCESS
+                        success = true
+                        break
                     }
 
-                if (file != null && file.exists()) {
-                    _downloadedInstallerPath.value = file
-                    _updateDownloadState.value = UpdateDownloadState.SUCCESS
-                    success = true
-                    break
+                    if (attempt < 3) {
+                        delay(2000) // Backoff
+                    }
                 }
 
-                if (attempt < 3) {
-                    delay(2000) // Backoff
+                if (!success) {
+                    _updateDownloadState.value = UpdateDownloadState.ERROR
+                    _updateError.value = "Failed to download update after 3 attempts. Please download manually from GitHub."
                 }
             }
-
-            if (!success) {
-                _updateDownloadState.value = UpdateDownloadState.ERROR
-                _updateError.value = "Failed to download update after 3 attempts. Please download manually from GitHub."
-            }
-        }
     }
 
     /** Resets the update download state to IDLE, dismissing the dialog while preserving background job. */
