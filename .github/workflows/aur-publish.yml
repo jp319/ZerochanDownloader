@@ -23,7 +23,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: pacman -Syu --noconfirm git openssh sudo curl
+        # Changed to -Sy --needed to skip full system upgrades and only install what is missing
+        run: pacman -Sy --noconfirm --needed git openssh sudo curl
 
       - name: Extract Version
         id: get_version
@@ -31,7 +32,7 @@ jobs:
           # Use input version if called via workflow_call, otherwise extract from tag
           if [ -n "${{ inputs.version }}" ]; then
             INPUT_VER="${{ inputs.version }}"
-            VERSION="${INPUT_VER#v}" # Strips the 'v' if it exists
+            VERSION="${INPUT_VER#v}"
           else
             VERSION=${GITHUB_REF_NAME#v}
           fi
