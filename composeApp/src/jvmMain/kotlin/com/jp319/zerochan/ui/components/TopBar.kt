@@ -42,6 +42,7 @@ import kotlin.math.roundToInt
 @Composable
 fun TopBar(
     burstCount: Int,
+    isUpdateAvailable: Boolean,
     selectedCount: Int,
     onDownloadClick: () -> Unit,
     onClearSelection: () -> Unit,
@@ -218,7 +219,18 @@ fun TopBar(
                     }
                     AppTooltip(text = "Help & Guide") {
                         IconButton(onClick = onHelpClick) {
-                            Icon(TablerIcons.InfoCircle, contentDescription = "Help & Guide", tint = MaterialTheme.colorScheme.primary)
+                            BadgedBox(
+                                badge = {
+                                    if (isUpdateAvailable) {
+                                        Badge(
+                                            containerColor = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.offset(x = (-4).dp, y = 4.dp),
+                                        )
+                                    }
+                                },
+                            ) {
+                                Icon(TablerIcons.InfoCircle, contentDescription = "Help & Guide", tint = MaterialTheme.colorScheme.primary)
+                            }
                         }
                     }
                 }

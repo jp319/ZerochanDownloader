@@ -235,18 +235,18 @@ fun SearchBar(
                         }
                     }
 
-                    AppTooltip(text = if (isFilterPanelVisible) "Hide Filters" else "Show Filters") {
-                        IconButton(
-                            onClick = onToggleFilters,
-                            colors =
-                                IconButtonDefaults.iconButtonColors(
-                                    contentColor = if (isFilterPanelVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                ),
-                            modifier = Modifier.size(32.dp),
-                        ) {
-                            Icon(TablerIcons.AdjustmentsHorizontal, contentDescription = "Toggle Filters")
-                        }
+                    IconButton(
+                        onClick = onToggleFilters,
+                        colors =
+                            IconButtonDefaults.iconButtonColors(
+                                contentColor = if (isFilterPanelVisible) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
+                        modifier = Modifier.size(28.dp),
+                    ) {
+                        Icon(TablerIcons.AdjustmentsHorizontal, contentDescription = "Toggle Filters", modifier = Modifier.size(18.dp))
                     }
+
+                    Spacer(Modifier.width(4.dp))
 
                     if (isLoading) {
                         CircularProgressIndicator(

@@ -27,11 +27,11 @@ import com.jp319.zerochan.data.network.RequestTracker
 import com.jp319.zerochan.data.network.createHttpClient
 import com.jp319.zerochan.data.profile.ProfileManager
 import com.jp319.zerochan.data.repository.ZerochanRepository
-import com.jp319.zerochan.ui.components.TopBar
-import com.jp319.zerochan.ui.components.ZerochanChip
+import com.jp319.zerochan.ui.components.*
 import com.jp319.zerochan.ui.screens.GalleryScreen
 import com.jp319.zerochan.ui.screens.GalleryViewModel
 import com.jp319.zerochan.ui.theme.*
+import com.jp319.zerochan.utils.FileUtil
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Check
 import compose.icons.tablericons.User
@@ -342,11 +342,22 @@ private fun MainScreen(
             )
         }
 
+    val updateInfo by viewModel.updateInfo.collectAsState()
+    val isUpdateAvailable by viewModel.isUpdateAvailable.collectAsState()
     val selectedIds by viewModel.selectedIdsForDownload.collectAsState()
     val isSelectionModeActive by viewModel.isSelectionModeActive.collectAsState()
 
     if (showGuideDialog) {
-        com.jp319.zerochan.ui.components.GuideDialog(
+        GuideDialog(
+            updateInfo = updateInfo,
+            onDownloadUpdate = {
+                showGuideDialog = false
+                viewModel.downloadUpdateInstaller()
+            },
+            onOpenGitHub = {
+                val url = updateInfo?.releaseUrl ?: "https://github.com/jp319/ZerochanDownloader/releases/latest"
+                FileUtil.openWebpage(url)
+            },
             onDismiss = {
                 showGuideDialog = false
                 if (profileManager.isFirstLaunch) {
@@ -368,40 +379,60 @@ private fun MainScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            val topBarContent = @Composable {
-                TopBar(
-                    burstCount = burstCount,
-                    selectedCount = selectedIds.size,
-                    onDownloadClick = viewModel::downloadSelectedItems,
-                    onClearSelection = viewModel::clearSelection,
-                    onLibraryClick = { viewModel.toggleDownloadsModal(true) },
-                    onProfileClick = { showProfileDialog = true },
-                    onHelpClick = { showGuideDialog = true },
-                    isSelectionModeActive = isSelectionModeActive,
-                    onToggleSelectionMode = viewModel::toggleSelectionMode,
-                    zoomLevel = zoomLevel,
-                    onZoomIn = { setZoomLevel((zoomLevel + 0.1f).coerceIn(0.5f, 10f)) },
-                    onZoomOut = { setZoomLevel((zoomLevel - 0.1f).coerceIn(0.5f, 10f)) },
-                    onZoomReset = { setZoomLevel(1f) },
-                    onMinimize = onMinimize,
-                    onMaximizeToggle = onMaximizeToggle,
-                    onClose = onClose,
-                )
-            }
-            if (windowScope != null) {
-                windowScope.WindowDraggableArea { topBarContent() }
-            } else {
-                topBarContent()
+            Column {
+                if (windowScope != null) {
+                    windowScope.WindowDraggableArea {
+                        TopBar(
+                            burstCount = burstCount,
+                            isUpdateAvailable = isUpdateAvailable,
+                            selectedCount = selectedIds.size,
+                            onDownloadClick = { viewModel.downloadSelectedItems() },
+                            onClearSelection = { viewModel.clearSelection() },
+                            onProfileClick = { showProfileDialog = true },
+                            onLibraryClick = { viewModel.toggleDownloadsModal(true) },
+                            onHelpClick = { showGuideDialog = true },
+                            isSelectionModeActive = isSelectionModeActive,
+                            onToggleSelectionMode = { viewModel.toggleSelectionMode() },
+                            zoomLevel = zoomLevel,
+                            onZoomIn = { setZoomLevel((zoomLevel + 0.1f).coerceAtMost(1.5f)) },
+                            onZoomOut = { setZoomLevel((zoomLevel - 0.1f).coerceAtLeast(0.5f)) },
+                            onZoomReset = { setZoomLevel(1f) },
+                            onMinimize = onMinimize,
+                            onMaximizeToggle = onMaximizeToggle,
+                            onClose = onClose,
+                        )
+                    }
+                } else {
+                    TopBar(
+                        burstCount = burstCount,
+                        isUpdateAvailable = isUpdateAvailable,
+                        selectedCount = selectedIds.size,
+                        onDownloadClick = { viewModel.downloadSelectedItems() },
+                        onClearSelection = { viewModel.clearSelection() },
+                        onProfileClick = { showProfileDialog = true },
+                        onLibraryClick = { viewModel.toggleDownloadsModal(true) },
+                        onHelpClick = { showGuideDialog = true },
+                        isSelectionModeActive = isSelectionModeActive,
+                        onToggleSelectionMode = { viewModel.toggleSelectionMode() },
+                        zoomLevel = zoomLevel,
+                        onZoomIn = { setZoomLevel((zoomLevel + 0.1f).coerceAtMost(1.5f)) },
+                        onZoomOut = { setZoomLevel((zoomLevel - 0.1f).coerceAtLeast(0.5f)) },
+                        onZoomReset = { setZoomLevel(1f) },
+                        onMinimize = onMinimize,
+                        onMaximizeToggle = onMaximizeToggle,
+                        onClose = onClose,
+                    )
+                }
             }
         },
-        containerColor = MaterialTheme.colorScheme.background,
     ) { innerPadding ->
         GalleryScreen(
             viewModel = viewModel,
             zoomLevel = zoomLevel,
             onZoomChange = setZoomLevel,
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier.padding(innerPadding).fillMaxSize(),
         )
     }
 }

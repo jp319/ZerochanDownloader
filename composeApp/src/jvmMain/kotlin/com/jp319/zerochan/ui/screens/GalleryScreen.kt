@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.staggeredgrid.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -26,11 +27,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.jp319.zerochan.ui.components.*
+import com.jp319.zerochan.utils.FileUtil
 import compose.icons.TablerIcons
-import compose.icons.tablericons.AlertTriangle
-import compose.icons.tablericons.Flag
-import compose.icons.tablericons.Plus
-import compose.icons.tablericons.Search
+import compose.icons.tablericons.*
 
 /**
  * The primary screen of the application, responsible for displaying the image gallery,
@@ -84,6 +83,13 @@ fun GalleryScreen(
     val strictMode by viewModel.strictMode.collectAsState()
     val colorFilter by viewModel.colorFilter.collectAsState()
 
+    // --- Update UI State ---
+    val updateInfo by viewModel.updateInfo.collectAsState()
+    val updateDownloadState by viewModel.updateDownloadState.collectAsState()
+    val updateDownloadProgress by viewModel.updateDownloadProgress.collectAsState()
+    val updateError by viewModel.updateError.collectAsState()
+    val downloadedInstallerPath by viewModel.downloadedInstallerPath.collectAsState()
+
     // --- Drag-to-select Bounding Box State (Bug 5) ---
     var dragStartPosition by remember { mutableStateOf<Offset?>(null) }
     var currentDragPosition by remember { mutableStateOf(Offset.Zero) }
@@ -121,10 +127,12 @@ fun GalleryScreen(
         onRetryAll = viewModel::retryAllDownloads,
     )
 
-    LocalImageModal(
-        file = viewingLocalFile,
-        onDismiss = viewModel::closeLocalFile,
-    )
+    if (viewingLocalFile != null) {
+        LocalImageModal(
+            file = viewingLocalFile,
+            onDismiss = viewModel::closeLocalFile,
+        )
+    }
 
     if (itemDetails != null || isLoadingDetails) {
         ItemDetailsDialog(
@@ -145,6 +153,24 @@ fun GalleryScreen(
         )
     }
 
+    if (updateDownloadState != UpdateDownloadState.IDLE) {
+        UpdateDownloadDialog(
+            state = updateDownloadState,
+            progress = updateDownloadProgress,
+            error = updateError,
+            onRetry = viewModel::downloadUpdateInstaller,
+            onShowInFolder = { file ->
+                com.jp319.zerochan.utils.FileUtil.openFileNatively(file.parentFile)
+            },
+            onOpenGitHub = {
+                val url = updateInfo?.releaseUrl ?: "https://github.com/jp319/ZerochanDownloader/releases/latest"
+                com.jp319.zerochan.utils.FileUtil.openWebpage(url)
+            },
+            onDismiss = viewModel::dismissUpdateDialog,
+            downloadedFile = downloadedInstallerPath,
+        )
+    }
+
     if (showDownloadsModal) {
         DownloadsLibraryDialog(
             currentPath = viewModel.currentDownloadDirectory,
@@ -155,16 +181,18 @@ fun GalleryScreen(
         )
     }
 
-    ImageModal(
-        item = selectedItem,
-        verifiedUrl = verifiedUrl,
-        onDismiss = viewModel::onDismissModal,
-        onViewDetails = { id -> viewModel.fetchItemDetails(id) },
-        onDownload = {
-            selectedItem?.let { item -> viewModel.downloadSingleItem(item, verifiedUrl) }
-        },
-        fetchGifFile = viewModel::fetchRemoteGif,
-    )
+    if (selectedItem != null) {
+        ImageModal(
+            item = selectedItem,
+            verifiedUrl = verifiedUrl,
+            onDismiss = viewModel::onDismissModal,
+            onViewDetails = { id -> viewModel.fetchItemDetails(id) },
+            onDownload = {
+                selectedItem?.let { item -> viewModel.downloadSingleItem(item, verifiedUrl) }
+            },
+            fetchGifFile = viewModel::fetchRemoteGif,
+        )
+    }
 
     // --- Pagination Trigger (BUG 3 Fix) ---
     var lastTriggeredTotal by remember { mutableStateOf(0) }

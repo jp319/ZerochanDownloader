@@ -14,6 +14,8 @@ import kotlin.time.Duration.Companion.milliseconds
 
 enum class DownloadState { PREPARING, DOWNLOADING, SUCCESS, ERROR, RETRY_STALLED }
 
+enum class UpdateDownloadState { IDLE, DOWNLOADING, SUCCESS, ERROR }
+
 data class DownloadJob(
     val item: ZerochanItem,
     val resolvedUrl: String? = null,
@@ -31,6 +33,29 @@ data class DownloadJob(
 class GalleryViewModel(private val repository: ZerochanRepository) {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val TAG = "GalleryViewModel"
+
+    // --- Update State ---
+    private val _updateInfo = MutableStateFlow<UpdateInfo?>(null)
+    val updateInfo: StateFlow<UpdateInfo?> = _updateInfo.asStateFlow()
+
+    private val _updateDownloadProgress = MutableStateFlow(0f)
+    val updateDownloadProgress = _updateDownloadProgress.asStateFlow()
+
+    private val _updateDownloadState = MutableStateFlow(UpdateDownloadState.IDLE)
+    val updateDownloadState = _updateDownloadState.asStateFlow()
+
+    private val _downloadedInstallerPath = MutableStateFlow<File?>(null)
+    val downloadedInstallerPath = _downloadedInstallerPath.asStateFlow()
+
+    private val _isCheckingForUpdates = MutableStateFlow(false)
+    val isCheckingForUpdates = _isCheckingForUpdates.asStateFlow()
+
+    private var updateDownloadJob: Job? = null
+
+    private val _updateError = MutableStateFlow<String?>(null)
+    val updateError = _updateError.asStateFlow()
+
+    val isUpdateAvailable = updateInfo.map { it != null }.stateIn(scope, SharingStarted.Lazily, false)
 
     // --- Search State ---
     private val _query = MutableStateFlow(TextFieldValue(""))
@@ -109,6 +134,130 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
             for (job in downloadChannel) {
                 runDownloadSequentially(job)
             }
+        }
+        checkForUpdates()
+    }
+
+    /**
+     * Checks for application updates from GitHub.
+     */
+    private fun checkForUpdates() {
+        scope.launch {
+            _isCheckingForUpdates.value = true
+            val release = repository.fetchLatestReleaseInfo()
+            if (release != null) {
+                val latestTag = release.tagName.removePrefix("v")
+                val currentTag = com.jp319.zerochan.BuildConfig.VERSION.removePrefix("v")
+
+                // Simple semver compare approximation
+                if (isNewerVersion(currentTag, latestTag)) {
+                    val bestAsset = getInstallerAssetForCurrentOS(release.assets)
+                    _updateInfo.value =
+                        UpdateInfo(
+                            latestVersion = release.tagName,
+                            releaseNotes = release.body,
+                            releaseUrl = release.htmlUrl,
+                            installerUrl = bestAsset?.browserDownloadUrl,
+                            installerName = bestAsset?.name,
+                            installerSize = bestAsset?.size ?: 0,
+                        )
+                    Logger.info(TAG, "New update available: $latestTag")
+                }
+            }
+            _isCheckingForUpdates.value = false
+        }
+    }
+
+    /**
+     * Downloads the latest installer with 3-attempt retry logic.
+     */
+    fun downloadUpdateInstaller() {
+        val info = updateInfo.value ?: return
+        val url = info.installerUrl ?: return
+
+        // --- STRONG CONCURRENCY GUARD (Bug 2 Refined) ---
+        // Use both job status and state to prevent double-starts from quick clicks
+        if (updateDownloadJob?.isActive == true || _updateDownloadState.value == UpdateDownloadState.DOWNLOADING) {
+            _updateDownloadState.value = UpdateDownloadState.DOWNLOADING // "Bring to Foreground"
+            Logger.info(TAG, "Update download already in progress. Restoring UI visibility.")
+            return
+        }
+
+        updateDownloadJob = scope.launch {
+            _updateDownloadState.value = UpdateDownloadState.DOWNLOADING
+            _updateDownloadProgress.value = 0f
+            _updateError.value = null
+
+            val tempDir = File(System.getProperty("java.io.tmpdir"), "zerochan-updates")
+            val targetFile = File(tempDir, info.installerName ?: "ZerochanDownloader-Update.exe")
+
+            // --- EXISTING FILE INTEGRITY CHECK (Bug 1 Refined) ---
+            // Only skip if the file exists AND its size exactly matches the expected installer size.
+            if (targetFile.exists() && info.installerSize > 0 && targetFile.length() == info.installerSize) {
+                Logger.info(TAG, "Full installer for version ${info.latestVersion} already exists locally. Skipping download.")
+                _downloadedInstallerPath.value = targetFile
+                _updateDownloadProgress.value = 1f
+                _updateDownloadState.value = UpdateDownloadState.SUCCESS
+                return@launch
+            }
+
+            var success = false
+            for (attempt in 1..3) {
+                Logger.info(TAG, "Download attempt $attempt for update...")
+                val file =
+                    repository.downloadInstaller(url, targetFile) { progress ->
+                        _updateDownloadProgress.value = progress
+                    }
+
+                if (file != null && file.exists()) {
+                    _downloadedInstallerPath.value = file
+                    _updateDownloadState.value = UpdateDownloadState.SUCCESS
+                    success = true
+                    break
+                }
+
+                if (attempt < 3) {
+                    delay(2000) // Backoff
+                }
+            }
+
+            if (!success) {
+                _updateDownloadState.value = UpdateDownloadState.ERROR
+                _updateError.value = "Failed to download update after 3 attempts. Please download manually from GitHub."
+            }
+        }
+    }
+
+    /** Resets the update download state to IDLE, dismissing the dialog while preserving background job. */
+    fun dismissUpdateDialog() {
+        _updateDownloadState.value = UpdateDownloadState.IDLE
+        // We preserve _updateDownloadProgress and _updateError so they remain available if brought back to foreground
+    }
+
+    private fun isNewerVersion(
+        current: String,
+        latest: String,
+    ): Boolean {
+        try {
+            val c = current.split(".").map { it.toInt() }
+            val l = latest.split(".").map { it.toInt() }
+            for (i in 0 until minOf(c.size, l.size)) {
+                if (l[i] > c[i]) return true
+                if (l[i] < c[i]) return false
+            }
+            return l.size > c.size
+        } catch (e: Exception) {
+            return current != latest // Fallback to literal compare
+        }
+    }
+
+    private fun getInstallerAssetForCurrentOS(assets: List<GitHubAsset>): GitHubAsset? {
+        val osName = System.getProperty("os.name").lowercase()
+        return when {
+            osName.contains("win") -> assets.find { it.name.endsWith(".exe") || it.name.endsWith(".msi") }
+            osName.contains("mac") -> assets.find { it.name.endsWith(".dmg") }
+            osName.contains("nix") || osName.contains("nux") -> assets.find { it.name.endsWith(".deb") || it.name.endsWith(".rpm") }
+            else -> assets.firstOrNull()
         }
     }
 

@@ -16,6 +16,32 @@ ktlint {
     }
 }
 
+val packageVersion = "1.0.0"
+
+// Task to generate BuildConfig file
+val generateBuildConfig =
+    tasks.register("generateBuildConfig") {
+        val version = packageVersion
+        val outputDir = layout.buildDirectory.dir("generated/buildConfig/kotlin/com/jp319/zerochan")
+
+        inputs.property("version", version)
+        outputs.dir(outputDir)
+
+        doLast {
+            val buildConfigFile = outputDir.get().file("BuildConfig.kt").asFile
+            buildConfigFile.parentFile.mkdirs()
+            buildConfigFile.writeText(
+                """
+                package com.jp319.zerochan
+
+                object BuildConfig {
+                    const val VERSION = "$version"
+                }
+                """.trimIndent(),
+            )
+        }
+    }
+
 kotlin {
     jvm()
 
@@ -43,11 +69,14 @@ kotlin {
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
-        jvmMain.dependencies {
-            implementation(compose.desktop.currentOs)
-            implementation(libs.kotlinx.coroutinesSwing)
-            implementation(libs.compose.components.animatedImage)
-            implementation(libs.slf4j.simple)
+        jvmMain {
+            dependencies {
+                implementation(compose.desktop.currentOs)
+                implementation(libs.kotlinx.coroutinesSwing)
+                implementation(libs.compose.components.animatedImage)
+                implementation(libs.slf4j.simple)
+            }
+            kotlin.srcDir(generateBuildConfig.map { it.outputs.files.asPath })
         }
     }
 }
@@ -71,7 +100,7 @@ compose.desktop {
             jvmArgs("--sun-misc-unsafe-memory-access=allow")
 
             packageName = "Zerochan Downloader"
-            packageVersion = "1.0.1"
+            this.packageVersion = packageVersion
             vendor = "John Fritz P. Antipuesto"
             description = "A beautiful desktop client for Zerochan."
             copyright = "© 2026 John Fritz P. Antipuesto"

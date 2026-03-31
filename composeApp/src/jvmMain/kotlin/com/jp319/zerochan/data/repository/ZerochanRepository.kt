@@ -401,4 +401,68 @@ class ZerochanRepository(
                 null
             }
         }
+
+    /**
+     * Fetches the latest release information from the GitHub repository.
+     * Compares the latest tag with the local [BuildConfig.VERSION].
+     *
+     * @return Simplified [UpdateInfo] if a release is found, null otherwise.
+     */
+    suspend fun fetchLatestReleaseInfo(): GitHubRelease? =
+        withContext(Dispatchers.IO) {
+            try {
+                // No rate limit check needed for GitHub public API (unless heavily called)
+                val url = "https://api.github.com/repos/jp319/ZerochanDownloader/releases/latest"
+                Logger.debug(TAG, "Checking for updates at $url")
+
+                val response: GitHubRelease = client.get(url).body()
+                response
+            } catch (e: Exception) {
+                Logger.error(TAG, "Failed to fetch update info", e)
+                null
+            }
+        }
+
+    /**
+     * Downloads an installer or update package from GitHub with real-time progress updates.
+     *
+     * @param url The public browser download URL of the asset.
+     * @param targetFile The local destination file.
+     * @param onProgress Callback receiving a float from 0.0 to 1.0.
+     * @return The downloaded file if successful, or null on failure.
+     */
+    suspend fun downloadInstaller(
+        url: String,
+        targetFile: File,
+        onProgress: (Float) -> Unit,
+    ): File? =
+        withContext(Dispatchers.IO) {
+            try {
+                Logger.info(TAG, "Downloading update installer from $url")
+                targetFile.parentFile.mkdirs()
+
+                client.prepareGet(url) {
+                    onDownload { bytesSentTotal, contentLength ->
+                        if (contentLength != null && contentLength > 0L) {
+                            onProgress(bytesSentTotal.toFloat() / contentLength.toFloat())
+                        }
+                    }
+                }.execute { response ->
+                    if (!response.status.isSuccess()) {
+                        throw Exception("Failed to download installer: ${response.status}")
+                    }
+
+                    val inputStream = response.bodyAsChannel().toInputStream()
+                    FileOutputStream(targetFile).use { outputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+
+                Logger.info(TAG, "Installer saved to: ${targetFile.absolutePath}")
+                targetFile
+            } catch (e: Exception) {
+                Logger.error(TAG, "Installer download failed", e)
+                null
+            }
+        }
 }
