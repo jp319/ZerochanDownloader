@@ -22,12 +22,13 @@ jobs:
           distribution: 'zulu'
           java-version: '24'
 
-      - name: Grant Execute Permission for Gradle
-        run: chmod +x gradlew
-        shell: bash
+      # Automatically sets up Gradle, makes gradlew executable, and caches dependencies/build outputs
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Build Windows Executable (.exe) and Installer (.msi)
-        run: ./gradlew :composeApp:packageReleaseExe :composeApp:packageReleaseMsi
+        # Added --no-daemon and --build-cache for CI optimization
+        run: ./gradlew :composeApp:packageReleaseExe :composeApp:packageReleaseMsi --no-daemon --build-cache
         shell: bash
 
       - name: Upload to GitHub Release
@@ -52,14 +53,15 @@ jobs:
           distribution: 'zulu'
           java-version: '24'
 
-      - name: Grant Execute Permission for Gradle
-        run: chmod +x gradlew
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Install fakeroot and dpkg
         run: sudo apt-get update && sudo apt-get install -y fakeroot dpkg rpm
 
       - name: Build Linux Packages (.deb and .rpm)
-        run: ./gradlew :composeApp:packageReleaseDeb :composeApp:packageReleaseRpm
+        # Added --no-daemon and --build-cache for CI optimization
+        run: ./gradlew :composeApp:packageReleaseDeb :composeApp:packageReleaseRpm --no-daemon --build-cache
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
@@ -92,11 +94,12 @@ jobs:
           distribution: 'zulu'
           java-version: '24'
 
-      - name: Grant Execute Permission for Gradle
-        run: chmod +x gradlew
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Build macOS Installer (.dmg)
-        run: ./gradlew :composeApp:packageReleaseDmg
+        # Added --no-daemon and --build-cache for CI optimization
+        run: ./gradlew :composeApp:packageReleaseDmg --no-daemon --build-cache
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
