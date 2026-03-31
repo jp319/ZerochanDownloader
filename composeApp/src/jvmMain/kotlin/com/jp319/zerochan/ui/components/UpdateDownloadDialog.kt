@@ -69,7 +69,7 @@ fun UpdateDownloadDialog(
                                 )
                                 Spacer(Modifier.height(24.dp))
                                 LinearProgressIndicator(
-                                    progress = progress,
+                                    progress = { progress },
                                     modifier = Modifier.fillMaxWidth().height(8.dp),
                                     strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
                                     color = MaterialTheme.colorScheme.primary,

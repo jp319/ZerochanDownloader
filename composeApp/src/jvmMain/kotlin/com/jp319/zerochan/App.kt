@@ -29,6 +29,7 @@ import com.jp319.zerochan.ui.components.ZerochanChip
 import com.jp319.zerochan.ui.screens.GalleryScreen
 import com.jp319.zerochan.ui.screens.GalleryViewModel
 import com.jp319.zerochan.ui.theme.*
+import com.jp319.zerochan.utils.ColorUtils
 import com.jp319.zerochan.utils.FileUtil
 import compose.icons.TablerIcons
 import compose.icons.tablericons.Check
@@ -38,19 +39,6 @@ import org.jetbrains.compose.resources.painterResource
 import zerochan.composeapp.generated.resources.Res
 import zerochan.composeapp.generated.resources.logo
 import kotlin.time.Duration.Companion.milliseconds
-
-private fun parseHexColor(
-    hex: String,
-    fallback: Color,
-): Color {
-    try {
-        val clean = if (hex.startsWith("#")) hex.substring(1) else hex
-        val argb = if (clean.length == 6) java.lang.Long.parseLong("FF$clean", 16) else java.lang.Long.parseLong(clean, 16)
-        return Color(argb)
-    } catch (_: Exception) {
-        return fallback
-    }
-}
 
 @Composable
 @Preview
@@ -268,7 +256,7 @@ fun ProfileDialog(
 
                 // --- HSL Color Picker ---
                 HslColorPicker(
-                    initialColor = parseHexColor(tempTheme, DraculaBurntOrange),
+                    initialColor = ColorUtils.parseHexColor(tempTheme, DraculaBurntOrange),
                     onColorChanged = { newColor ->
                         val argb = newColor.toArgb()
                         val hex = String.format("#%06X", (0xFFFFFF and argb))
@@ -282,7 +270,7 @@ fun ProfileDialog(
                     Surface(
                         modifier = Modifier.size(24.dp),
                         shape = CircleShape,
-                        color = parseHexColor(tempTheme, DraculaBurntOrange),
+                        color = ColorUtils.parseHexColor(tempTheme, DraculaBurntOrange),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                     ) {}
                     Spacer(Modifier.width(8.dp))
@@ -376,56 +364,41 @@ private fun MainScreen(
         )
     }
 
+    @Composable
+    fun RenderTopBar() {
+        val ongoingDownloadCount by viewModel.ongoingDownloadCount.collectAsState()
+        TopBar(
+            burstCount = burstCount,
+            ongoingDownloadCount = ongoingDownloadCount,
+            isUpdateAvailable = isUpdateAvailable,
+            selectedCount = selectedIds.size,
+            onDownloadClick = { viewModel.downloadSelectedItems() },
+            onClearSelection = { viewModel.clearSelection() },
+            onProfileClick = { showProfileDialog = true },
+            onLibraryClick = { viewModel.toggleDownloadsModal(true) },
+            onHelpClick = { showGuideDialog = true },
+            isSelectionModeActive = isSelectionModeActive,
+            onToggleSelectionMode = { viewModel.toggleSelectionMode() },
+            zoomLevel = zoomLevel,
+            onZoomIn = { setZoomLevel((zoomLevel + 0.1f).coerceAtMost(1.5f)) },
+            onZoomOut = { setZoomLevel((zoomLevel - 0.1f).coerceAtLeast(0.5f)) },
+            onZoomReset = { setZoomLevel(1f) },
+            onMinimize = onMinimize,
+            onMaximizeToggle = onMaximizeToggle,
+            onClose = onClose,
+        )
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             Column {
                 if (windowScope != null) {
-                    val ongoingDownloadCount by viewModel.ongoingDownloadCount.collectAsState()
                     windowScope.WindowDraggableArea {
-                        TopBar(
-                            burstCount = burstCount,
-                            ongoingDownloadCount = ongoingDownloadCount,
-                            isUpdateAvailable = isUpdateAvailable,
-                            selectedCount = selectedIds.size,
-                            onDownloadClick = { viewModel.downloadSelectedItems() },
-                            onClearSelection = { viewModel.clearSelection() },
-                            onProfileClick = { showProfileDialog = true },
-                            onLibraryClick = { viewModel.toggleDownloadsModal(true) },
-                            onHelpClick = { showGuideDialog = true },
-                            isSelectionModeActive = isSelectionModeActive,
-                            onToggleSelectionMode = { viewModel.toggleSelectionMode() },
-                            zoomLevel = zoomLevel,
-                            onZoomIn = { setZoomLevel((zoomLevel + 0.1f).coerceAtMost(1.5f)) },
-                            onZoomOut = { setZoomLevel((zoomLevel - 0.1f).coerceAtLeast(0.5f)) },
-                            onZoomReset = { setZoomLevel(1f) },
-                            onMinimize = onMinimize,
-                            onMaximizeToggle = onMaximizeToggle,
-                            onClose = onClose,
-                        )
+                        RenderTopBar()
                     }
                 } else {
-                    val ongoingDownloadCount by viewModel.ongoingDownloadCount.collectAsState()
-                    TopBar(
-                        burstCount = burstCount,
-                        ongoingDownloadCount = ongoingDownloadCount,
-                        isUpdateAvailable = isUpdateAvailable,
-                        selectedCount = selectedIds.size,
-                        onDownloadClick = { viewModel.downloadSelectedItems() },
-                        onClearSelection = { viewModel.clearSelection() },
-                        onProfileClick = { showProfileDialog = true },
-                        onLibraryClick = { viewModel.toggleDownloadsModal(true) },
-                        onHelpClick = { showGuideDialog = true },
-                        isSelectionModeActive = isSelectionModeActive,
-                        onToggleSelectionMode = { viewModel.toggleSelectionMode() },
-                        zoomLevel = zoomLevel,
-                        onZoomIn = { setZoomLevel((zoomLevel + 0.1f).coerceAtMost(1.5f)) },
-                        onZoomOut = { setZoomLevel((zoomLevel - 0.1f).coerceAtLeast(0.5f)) },
-                        onZoomReset = { setZoomLevel(1f) },
-                        onMinimize = onMinimize,
-                        onMaximizeToggle = onMaximizeToggle,
-                        onClose = onClose,
-                    )
+                    RenderTopBar()
                 }
             }
         },

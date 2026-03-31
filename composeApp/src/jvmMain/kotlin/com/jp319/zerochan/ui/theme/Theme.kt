@@ -6,21 +6,9 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import com.jp319.zerochan.utils.ColorUtils
 import com.materialkolor.hct.Hct
 import com.materialkolor.palettes.TonalPalette
-
-private fun parseHexColor(
-    hex: String,
-    fallback: Color,
-): Color {
-    try {
-        val clean = if (hex.startsWith("#")) hex.substring(1) else hex
-        val argb = if (clean.length == 6) java.lang.Long.parseLong("FF$clean", 16) else java.lang.Long.parseLong(clean, 16)
-        return Color(argb)
-    } catch (e: Exception) {
-        return fallback
-    }
-}
 
 @Composable
 fun AppTheme(
@@ -30,7 +18,7 @@ fun AppTheme(
 ) {
     // Migrate legacy named themes
     val seedHex = LegacyThemeMap[themePreference] ?: themePreference
-    val seedColor = parseHexColor(seedHex, DraculaBurntOrange)
+    val seedColor = ColorUtils.parseHexColor(seedHex, DraculaBurntOrange)
     val seedInt = seedColor.toArgb()
     val isDark = themeMode != "Light"
     val isAmoled = themeMode == "AMOLED"

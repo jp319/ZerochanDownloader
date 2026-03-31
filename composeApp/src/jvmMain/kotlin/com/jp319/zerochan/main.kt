@@ -62,7 +62,6 @@ fun main() {
     // This is the only reliable way to set the taskbar icon on some compositors
     if (icon != null) {
         try {
-            val toolkit = java.awt.Toolkit.getDefaultToolkit()
             val iconImages = listOf(icon)
             // Reflect into sun.awt to set the default icon images used by all windows
             val awtAppClass = Class.forName("sun.awt.AppContext")

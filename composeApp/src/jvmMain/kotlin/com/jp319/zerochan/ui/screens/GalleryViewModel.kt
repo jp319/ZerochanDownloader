@@ -32,7 +32,7 @@ data class DownloadJob(
  */
 class GalleryViewModel(private val repository: ZerochanRepository) {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
-    private val TAG = "GalleryViewModel"
+    private val tag = "GalleryViewModel"
 
     // --- Update State ---
     private val _updateInfo = MutableStateFlow<UpdateInfo?>(null)
@@ -46,9 +46,6 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
 
     private val _downloadedInstallerPath = MutableStateFlow<File?>(null)
     val downloadedInstallerPath = _downloadedInstallerPath.asStateFlow()
-
-    private val _isCheckingForUpdates = MutableStateFlow(false)
-    val isCheckingForUpdates = _isCheckingForUpdates.asStateFlow()
 
     private var updateDownloadJob: Job? = null
 
@@ -148,7 +145,6 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
      */
     private fun checkForUpdates() {
         scope.launch {
-            _isCheckingForUpdates.value = true
             val release = repository.fetchLatestReleaseInfo()
             if (release != null) {
                 val latestTag = release.tagName.removePrefix("v")
@@ -166,10 +162,9 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
                             installerName = bestAsset?.name,
                             installerSize = bestAsset?.size ?: 0,
                         )
-                    Logger.info(TAG, "New update available: $latestTag")
+                    Logger.info(tag, "New update available: $latestTag")
                 }
             }
-            _isCheckingForUpdates.value = false
         }
     }
 
@@ -184,7 +179,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         // Use both job status and state to prevent double-starts from quick clicks
         if (updateDownloadJob?.isActive == true || _updateDownloadState.value == UpdateDownloadState.DOWNLOADING) {
             _updateDownloadState.value = UpdateDownloadState.DOWNLOADING // "Bring to Foreground"
-            Logger.info(TAG, "Update download already in progress. Restoring UI visibility.")
+            Logger.info(tag, "Update download already in progress. Restoring UI visibility.")
             return
         }
 
@@ -200,7 +195,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
                 // --- EXISTING FILE INTEGRITY CHECK (Bug 1 Refined) ---
                 // Only skip if the file exists AND its size exactly matches the expected installer size.
                 if (targetFile.exists() && info.installerSize > 0 && targetFile.length() == info.installerSize) {
-                    Logger.info(TAG, "Full installer for version ${info.latestVersion} already exists locally. Skipping download.")
+                    Logger.info(tag, "Full installer for version ${info.latestVersion} already exists locally. Skipping download.")
                     _downloadedInstallerPath.value = targetFile
                     _updateDownloadProgress.value = 1f
                     _updateDownloadState.value = UpdateDownloadState.SUCCESS
@@ -209,7 +204,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
 
                 var success = false
                 for (attempt in 1..3) {
-                    Logger.info(TAG, "Download attempt $attempt for update...")
+                    Logger.info(tag, "Download attempt $attempt for update...")
                     val file =
                         repository.downloadInstaller(url, targetFile) { progress ->
                             _updateDownloadProgress.value = progress
@@ -223,7 +218,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
                     }
 
                     if (attempt < 3) {
-                        delay(2000) // Backoff
+                        delay(2000.milliseconds) // Backoff
                     }
                 }
 
@@ -252,7 +247,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
                 if (l[i] < c[i]) return false
             }
             return l.size > c.size
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return current != latest // Fallback to literal compare
         }
     }
@@ -521,7 +516,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
             repository.profileManager.searchHistory = currentHistory
         }
 
-        Logger.debug(TAG, "Searching for: $query")
+        Logger.debug(tag, "Searching for: $query")
         currentPage = 1
         _isEndOfPaginationReached.update { false }
 
@@ -550,7 +545,6 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
 
     /** Loads the next page of results for the current search. */
     fun onLoadMore() {
-        val currentQuery = _query.value.text
         if (_isLoading.value || _isEndOfPaginationReached.value) return
 
         currentPage++
@@ -583,7 +577,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         if (e is NoUsernameException) {
             _isUsernameMissing.update { true }
         } else {
-            Logger.error(TAG, tag, e)
+            Logger.error(tag, tag, e)
             _error.update { e.message }
         }
     }
@@ -613,7 +607,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         } else if (!isFocused) {
             // Delay clear to allow click events on suggestions to fire first
             scope.launch {
-                delay(200)
+                delay(200.milliseconds)
                 _suggestions.update { emptyList() }
             }
         }
@@ -669,12 +663,6 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         downloadChannel.trySend(job)
     }
 
-    /** Toggles the visibility of the Unified Downloads modal. */
-    fun toggleDownloadManager(show: Boolean? = null) {
-        _showDownloadsModal.update { show ?: !it }
-        if (_showDownloadsModal.value) loadLocalLibrary()
-    }
-
     private suspend fun runDownloadSequentially(job: DownloadJob) {
         try {
             val downloadUrl = resolveDownloadUrl(job.item, job.resolvedUrl)
@@ -714,7 +702,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
                 retryCount = job.retryCount,
             )
         } catch (e: Exception) {
-            Logger.error(TAG, "Download failed for item ${job.item.id}", e)
+            Logger.error(tag, "Download failed for item ${job.item.id}", e)
             updateJobState(job.item.id, job.resolvedUrl ?: "", DownloadState.ERROR, job.retryCount, e.message)
         }
     }

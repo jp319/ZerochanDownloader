@@ -2,8 +2,6 @@ package com.jp319.zerochan.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -13,9 +11,6 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -24,6 +19,7 @@ import coil3.compose.LocalPlatformContext
 import coil3.compose.SubcomposeAsyncImage
 import coil3.request.ImageRequest
 import coil3.size.Size
+import com.jp319.zerochan.utils.zoomable
 import compose.icons.TablerIcons
 import compose.icons.tablericons.CircleX
 import org.jetbrains.compose.animatedimage.AnimatedImage
@@ -101,8 +97,20 @@ fun LocalImageModal(
                         } else {
                             ZoomableGifViewer(
                                 animatedImage!!,
-                                // Since it's loaded from disk, we can assume it's fully loaded
                                 progress = 1f,
+                                scale = scale,
+                                offsetX = offsetX,
+                                offsetY = offsetY,
+                                onTransform = { s, x, y ->
+                                    scale = s
+                                    offsetX = x
+                                    offsetY = y
+                                },
+                                onReset = {
+                                    scale = 1f
+                                    offsetX = 0f
+                                    offsetY = 0f
+                                },
                             )
                         }
                     } else {
@@ -125,46 +133,20 @@ fun LocalImageModal(
                             modifier =
                                 Modifier
                                     .fillMaxSize()
-                                    .pointerInput(Unit) {
-                                        detectTransformGestures { _, pan, zoom, _ ->
-                                            scale = (scale * zoom).coerceIn(1f, 5f)
-                                            if (scale > 1f) {
-                                                offsetX += pan.x
-                                                offsetY += pan.y
-                                            } else {
-                                                offsetX = 0f
-                                                offsetY = 0f
-                                            }
-                                        }
-                                    }
-                                    .pointerInput(Unit) {
-                                        awaitPointerEventScope {
-                                            while (true) {
-                                                val event = awaitPointerEvent()
-                                                if (event.type == PointerEventType.Scroll) {
-                                                    val deltaY = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
-                                                    scale = (scale - deltaY * 0.15f).coerceIn(1f, 5f)
-                                                    if (scale <= 1f) {
-                                                        offsetX = 0f
-                                                        offsetY = 0f
-                                                    }
-                                                    event.changes.forEach { it.consume() }
-                                                }
-                                            }
-                                        }
-                                    }
-                                    .pointerInput(Unit) {
-                                        detectTapGestures(onDoubleTap = {
+                                    .zoomable(
+                                        scale = scale,
+                                        offsetX = offsetX,
+                                        offsetY = offsetY,
+                                        onTransform = { s, x, y ->
+                                            scale = s
+                                            offsetX = x
+                                            offsetY = y
+                                        },
+                                        onReset = {
                                             scale = 1f
                                             offsetX = 0f
                                             offsetY = 0f
-                                        })
-                                    }
-                                    .graphicsLayer(
-                                        scaleX = scale,
-                                        scaleY = scale,
-                                        translationX = offsetX,
-                                        translationY = offsetY,
+                                        },
                                     ),
                         )
                     }

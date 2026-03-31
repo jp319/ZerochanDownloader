@@ -2,8 +2,6 @@ package com.jp319.zerochan.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -12,9 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -24,6 +19,7 @@ import coil3.request.ImageRequest
 import coil3.size.Size
 import com.jp319.zerochan.data.model.ZerochanItem
 import com.jp319.zerochan.data.network.DownloadProgressTracker
+import com.jp319.zerochan.utils.zoomable
 import compose.icons.TablerIcons
 import compose.icons.tablericons.*
 import org.jetbrains.compose.animatedimage.AnimatedImage
@@ -175,11 +171,22 @@ fun ImageModal(
                                 }
                             }
 
-                            // Just call the component! It handles loading vs playing internally.
                             ZoomableGifViewer(
                                 animatedImage = animatedImage,
-                                // This comes from your DownloadProgressTracker
                                 progress = currentProgress,
+                                scale = scale,
+                                offsetX = offsetX,
+                                offsetY = offsetY,
+                                onTransform = { s, x, y ->
+                                    scale = s
+                                    offsetX = x
+                                    offsetY = y
+                                },
+                                onReset = {
+                                    scale = 1f
+                                    offsetX = 0f
+                                    offsetY = 0f
+                                },
                             )
                         } else {
                             // Unified Progress UI for Coil Loading
@@ -196,63 +203,23 @@ fun ImageModal(
                                     modifier =
                                         Modifier
                                             .fillMaxSize()
-                                            .pointerInput(Unit) {
-                                                detectTransformGestures { _, pan, zoom, _ ->
-                                                    scale = (scale * zoom).coerceIn(1f, 10f)
-                                                    if (scale > 1f) {
-                                                        offsetX += pan.x
-                                                        offsetY += pan.y
-                                                    } else {
-                                                        offsetX = 0f
-                                                        offsetY = 0f
-                                                    }
-                                                }
-                                            }
-                                            .pointerInput(Unit) {
-                                                awaitPointerEventScope {
-                                                    while (true) {
-                                                        val event = awaitPointerEvent()
-                                                        if (event.type == PointerEventType.Scroll) {
-                                                            val deltaY = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
-                                                            scale = (scale - deltaY * 0.15f).coerceIn(1f, 5f)
-                                                            if (scale <= 1f) {
-                                                                offsetX = 0f
-                                                                offsetY = 0f
-                                                            }
-                                                            event.changes.forEach { it.consume() }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            .pointerInput(Unit) {
-                                                detectTapGestures(onDoubleTap = {
+                                            .zoomable(
+                                                scale = scale,
+                                                offsetX = offsetX,
+                                                offsetY = offsetY,
+                                                onTransform = { s, x, y ->
+                                                    scale = s
+                                                    offsetX = x
+                                                    offsetY = y
+                                                },
+                                                onReset = {
                                                     scale = 1f
                                                     offsetX = 0f
                                                     offsetY = 0f
-                                                })
-                                            }
-                                            .graphicsLayer(scaleX = scale, scaleY = scale, translationX = offsetX, translationY = offsetY),
+                                                },
+                                            ),
                                     loading = {
-                                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                                if (currentProgress > 0f && currentProgress < 1f) {
-                                                    CircularProgressIndicator(
-                                                        progress = { currentProgress },
-                                                        color = MaterialTheme.colorScheme.primary,
-                                                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                                                        modifier = Modifier.size(48.dp),
-                                                    )
-                                                    Spacer(modifier = Modifier.height(8.dp))
-                                                    Text(
-                                                        text = "${(currentProgress * 100).toInt()}%",
-                                                        color = Color.White,
-                                                        style = MaterialTheme.typography.labelLarge,
-                                                    )
-                                                } else {
-                                                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                                                }
-                                            }
-                                        }
+                                        LoadingProgress(progress = currentProgress)
                                     },
                                     error = {
                                         Column(

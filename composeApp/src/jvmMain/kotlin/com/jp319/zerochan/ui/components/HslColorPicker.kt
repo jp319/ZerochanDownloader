@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.*
 
 /**
- * An interactive color picker component using an HSL (Hue, Saturation, Lightness)
+ * An interactive color picker component using an HSV (Hue, Saturation, Value)
  * ring and square layout.
  *
  * @param initialColor The color the picker should start with.
@@ -54,6 +54,20 @@ fun HslColorPicker(
             val squareSize = (innerRadius * sqrt(2f) * 0.9f)
             val squareTopLeft = Offset(center.x - squareSize / 2, center.y - squareSize / 2)
 
+            fun handleHueChange(pos: Offset) {
+                val angle = (atan2(pos.y - center.y, pos.x - center.x) * 180 / PI).toFloat()
+                val normalizedAngle = (angle + 360) % 360
+                hsv = Triple(normalizedAngle, hsv.second, hsv.third)
+                onColorChanged(hsvToColor(normalizedAngle, hsv.second, hsv.third))
+            }
+
+            fun handleSvChange(pos: Offset) {
+                val s = ((pos.x - squareTopLeft.x) / squareSize).coerceIn(0f, 1f)
+                val v = (1f - (pos.y - squareTopLeft.y) / squareSize).coerceIn(0f, 1f)
+                hsv = Triple(hsv.first, s, v)
+                onColorChanged(hsvToColor(hsv.first, s, v))
+            }
+
             Canvas(
                 modifier =
                     Modifier
@@ -62,21 +76,12 @@ fun HslColorPicker(
                             detectDragGestures { change, _ ->
                                 val pos = change.position
                                 val dist = (pos - center).getDistance()
-
                                 if (dist in innerRadius..outerRadius) {
-                                    // Hue ring
-                                    val angle = (atan2(pos.y - center.y, pos.x - center.x) * 180 / PI).toFloat()
-                                    val normalizedAngle = (angle + 360) % 360
-                                    hsv = Triple(normalizedAngle, hsv.second, hsv.third)
-                                    onColorChanged(hsvToColor(normalizedAngle, hsv.second, hsv.third))
+                                    handleHueChange(pos)
                                 } else if (pos.x in squareTopLeft.x..(squareTopLeft.x + squareSize) &&
                                     pos.y in squareTopLeft.y..(squareTopLeft.y + squareSize)
                                 ) {
-                                    // SV square
-                                    val s = ((pos.x - squareTopLeft.x) / squareSize).coerceIn(0f, 1f)
-                                    val v = (1f - (pos.y - squareTopLeft.y) / squareSize).coerceIn(0f, 1f)
-                                    hsv = Triple(hsv.first, s, v)
-                                    onColorChanged(hsvToColor(hsv.first, s, v))
+                                    handleSvChange(pos)
                                 }
                             }
                         }
@@ -84,17 +89,11 @@ fun HslColorPicker(
                             detectTapGestures { pos ->
                                 val dist = (pos - center).getDistance()
                                 if (dist in (innerRadius - 10f)..(outerRadius + 10f)) {
-                                    val angle = (atan2(pos.y - center.y, pos.x - center.x) * 180 / PI).toFloat()
-                                    val normalizedAngle = (angle + 360) % 360
-                                    hsv = Triple(normalizedAngle, hsv.second, hsv.third)
-                                    onColorChanged(hsvToColor(normalizedAngle, hsv.second, hsv.third))
+                                    handleHueChange(pos)
                                 } else if (pos.x in squareTopLeft.x..(squareTopLeft.x + squareSize) &&
                                     pos.y in squareTopLeft.y..(squareTopLeft.y + squareSize)
                                 ) {
-                                    val s = ((pos.x - squareTopLeft.x) / squareSize).coerceIn(0f, 1f)
-                                    val v = (1f - (pos.y - squareTopLeft.y) / squareSize).coerceIn(0f, 1f)
-                                    hsv = Triple(hsv.first, s, v)
-                                    onColorChanged(hsvToColor(hsv.first, s, v))
+                                    handleSvChange(pos)
                                 }
                             }
                         },

@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -89,13 +88,13 @@ fun DownloadsModal(
                 }
 
                 // TABS
-                TabRow(
+                SecondaryTabRow(
                     selectedTabIndex = selectedTab,
                     containerColor = Color.Transparent,
                     contentColor = MaterialTheme.colorScheme.primary,
-                    indicator = { tabPositions ->
+                    indicator = {
                         TabRowDefaults.SecondaryIndicator(
-                            Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
+                            modifier = Modifier.tabIndicatorOffset(selectedTab),
                             color = MaterialTheme.colorScheme.primary,
                         )
                     },
@@ -320,14 +319,18 @@ private fun DownloadManagerRow(
 
             Spacer(Modifier.width(16.dp))
 
-            if (job.state == DownloadState.ERROR || job.state == DownloadState.RETRY_STALLED) {
-                IconButton(onClick = { onRetry(job) }) {
-                    Icon(TablerIcons.Refresh, null, tint = MaterialTheme.colorScheme.primary)
+            when (job.state) {
+                DownloadState.ERROR, DownloadState.RETRY_STALLED -> {
+                    IconButton(onClick = { onRetry(job) }) {
+                        Icon(TablerIcons.Refresh, null, tint = MaterialTheme.colorScheme.primary)
+                    }
                 }
-            } else if (job.state == DownloadState.SUCCESS) {
-                Icon(TablerIcons.Check, null, tint = Color(0xFF4CAF50))
-            } else {
-                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                DownloadState.SUCCESS -> {
+                    Icon(TablerIcons.Check, null, tint = Color(0xFF4CAF50))
+                }
+                else -> {
+                    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                }
             }
         }
     }
