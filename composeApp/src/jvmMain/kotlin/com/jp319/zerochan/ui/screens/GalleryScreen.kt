@@ -119,7 +119,7 @@ fun GalleryScreen(
             onSearchTag = { tag ->
                 viewModel.onDismissDetails()
                 viewModel.onDismissModal()
-                viewModel.onQueryChange(tag)
+                viewModel.onQueryChange(androidx.compose.ui.text.input.TextFieldValue(tag, selection = androidx.compose.ui.text.TextRange(tag.length)))
                 viewModel.onSearch(tag)
             },
         )
@@ -172,9 +172,9 @@ fun GalleryScreen(
                 .onPointerEvent(PointerEventType.Press, pass = PointerEventPass.Initial) { event ->
                     // Capture start position as early as possible (Initial pass) for selection logic
                     dragStartPosition = event.changes.first().position
-                    
-                    // Clear focus only if the event wasn't consumed by children (Main pass handled later)
-                    // But we can trigger it here for the root background click
+                }
+                .onPointerEvent(PointerEventType.Press) { event ->
+                    // Clear focus and hide filters only if clicking outside interactive elements (Main pass)
                     if (event.changes.any { !it.isConsumed }) {
                         focusManager.clearFocus()
                         viewModel.hideFilterPanel()
@@ -227,12 +227,12 @@ fun GalleryScreen(
                 images.isEmpty() && !isLoading -> {
                     StateMessage(
                         icon = TablerIcons.Search,
-                        title = if (query.isEmpty()) "Zerochan Downloader" else "No results found",
+                        title = if (query.text.isEmpty()) "Zerochan Downloader" else "No results found",
                         description =
-                            if (query.isEmpty()) {
+                            if (query.text.isEmpty()) {
                                 "Search for anime tags to begin."
                             } else {
-                                "We couldn't find anything for \"$query\"."
+                                "We couldn't find anything for \"${query.text}\"."
                             },
                     )
                 }

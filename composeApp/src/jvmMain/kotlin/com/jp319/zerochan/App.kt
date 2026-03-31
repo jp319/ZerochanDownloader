@@ -8,7 +8,9 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material3.*
@@ -16,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -25,6 +28,7 @@ import com.jp319.zerochan.data.network.createHttpClient
 import com.jp319.zerochan.data.profile.ProfileManager
 import com.jp319.zerochan.data.repository.ZerochanRepository
 import com.jp319.zerochan.ui.components.TopBar
+import com.jp319.zerochan.ui.components.ZerochanChip
 import com.jp319.zerochan.ui.screens.GalleryScreen
 import com.jp319.zerochan.ui.screens.GalleryViewModel
 import com.jp319.zerochan.ui.theme.*
@@ -175,24 +179,28 @@ fun ProfileDialog(
                 )
                 
                 // Theme Mode Selection
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    val modes = listOf("Dark", "Light", "AMOLED")
-                    modes.forEach { mode ->
-                        val isSelected = tempThemeMode == mode
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { 
-                                tempThemeMode = mode
-                                onThemeModeChange(mode)
-                            },
-                            label = { Text(mode) },
-                            leadingIcon = if (isSelected) {
-                                { Icon(TablerIcons.Check, null, Modifier.size(16.dp)) }
-                            } else null
-                        )
+                Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        val modes = listOf("Dark", "Light", "AMOLED", "Dracula", "Nord", "Monokai")
+                        modes.forEach { mode ->
+                            val isSelected = tempThemeMode == mode
+                            ZerochanChip(
+                                selected = isSelected,
+                                onClick = { 
+                                    tempThemeMode = mode
+                                    onThemeModeChange(mode)
+                                },
+                                label = mode,
+                                leadingIcon = if (isSelected) {
+                                    { Icon(TablerIcons.Check, null, Modifier.size(16.dp)) }
+                                } else null
+                            )
+                        }
                     }
                 }
 
@@ -202,39 +210,44 @@ fun ProfileDialog(
                     modifier = Modifier.padding(bottom = 12.dp),
                 )
                 
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    themePresets.forEach { (name, color) ->
-                        val isSelected = tempTheme == LegacyThemeMap[name] || tempTheme == name
-                        Surface(
-                            shape = CircleShape,
-                            color = color,
-                            modifier =
-                                Modifier
-                                    .size(32.dp)
-                                    .clickable {
-                                        tempTheme = LegacyThemeMap[name] ?: name
-                                        onThemeChange(tempTheme)
+                Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        themePresets.forEach { (name, color) ->
+                            val isSelected = tempTheme == LegacyThemeMap[name] || tempTheme == name
+                            Surface(
+                                shape = CircleShape,
+                                color = color,
+                                modifier =
+                                    Modifier
+                                        .size(36.dp)
+                                        .clickable {
+                                            tempTheme = LegacyThemeMap[name] ?: name
+                                            onThemeChange(tempTheme)
+                                        },
+                                border =
+                                    if (isSelected) {
+                                        BorderStroke(
+                                            2.dp,
+                                            MaterialTheme.colorScheme.onSurface,
+                                        )
+                                    } else {
+                                        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                                     },
-                            border =
+                            ) {
                                 if (isSelected) {
-                                    BorderStroke(
-                                        2.dp,
-                                        MaterialTheme.colorScheme.onSurface,
+                                    Icon(
+                                        imageVector = TablerIcons.Check,
+                                        contentDescription = null,
+                                        tint = if (Color(color.toArgb()).luminance() > 0.5f) Color.Black else Color.White,
+                                        modifier = Modifier.padding(6.dp),
                                     )
-                                } else {
-                                    null
-                                },
-                        ) {
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = TablerIcons.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.surface,
-                                    modifier = Modifier.padding(4.dp),
-                                )
+                                }
                             }
                         }
                     }

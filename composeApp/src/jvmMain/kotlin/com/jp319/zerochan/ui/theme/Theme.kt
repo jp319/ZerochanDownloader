@@ -27,7 +27,7 @@ fun AppTheme(
     val seedHex = LegacyThemeMap[themePreference] ?: themePreference
     val seedColor = parseHexColor(seedHex, DraculaBurntOrange)
     val seedInt = seedColor.toArgb()
-    val isDark = themeMode == "Dark" || themeMode == "AMOLED"
+    val isDark = themeMode != "Light"
     val isAmoled = themeMode == "AMOLED"
 
     val hct = Hct.fromInt(seedInt)
@@ -38,7 +38,7 @@ fun AppTheme(
     val neutralVariantPalette = TonalPalette.fromHueAndChroma(hct.hue, 8.0)
     val errorPalette = TonalPalette.fromHueAndChroma(25.0, 84.0)
 
-    val colorScheme = if (isDark) {
+    val baseColorScheme = if (isDark) {
         darkColorScheme(
             primary = Color(primaryPalette.tone(80)),
             onPrimary = Color(primaryPalette.tone(20)),
@@ -100,6 +100,37 @@ fun AppTheme(
             inverseOnSurface = Color(neutralPalette.tone(95)),
             inversePrimary = Color(primaryPalette.tone(80)),
         )
+    }
+
+    val colorScheme = when (themeMode) {
+        "Dracula" -> baseColorScheme.copy(
+            background = DraculaBackground,
+            surface = DraculaBackground,
+            surfaceVariant = DraculaCurrentLine,
+            onBackground = DraculaForeground,
+            onSurface = DraculaForeground,
+            onSurfaceVariant = DraculaForeground.copy(alpha = 0.7f),
+            primary = if (themePreference == "Purple" || themePreference == "#BD93F9") DraculaPurple else baseColorScheme.primary,
+        )
+        "Nord" -> baseColorScheme.copy(
+            background = NordDark0,
+            surface = NordDark1,
+            surfaceVariant = NordDark2,
+            onBackground = Color(0xFFECEFF4),
+            onSurface = Color(0xFFECEFF4),
+            onSurfaceVariant = Color(0xFFD8DEE9),
+            primary = if (themePreference == "Cyan" || themePreference == "#8BE9FD") Color(0xFF88C0D0) else baseColorScheme.primary,
+        )
+        "Monokai" -> baseColorScheme.copy(
+            background = MonokaiDark0,
+            surface = MonokaiDark1,
+            surfaceVariant = Color(0xFF49483E),
+            onBackground = MonokaiForeground,
+            onSurface = MonokaiForeground,
+            onSurfaceVariant = MonokaiForeground.copy(alpha = 0.8f),
+            primary = if (themePreference == "Pink" || themePreference == "#FF79C6") Color(0xFFF92672) else baseColorScheme.primary,
+        )
+        else -> baseColorScheme
     }
 
     MaterialTheme(

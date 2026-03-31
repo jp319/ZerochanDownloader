@@ -57,15 +57,15 @@ fun HslColorPicker(
                                 // Hue ring
                                 val angle = (atan2(pos.y - center.y, pos.x - center.x) * 180 / PI).toFloat()
                                 val normalizedAngle = (angle + 360) % 360
-                                hsv = Triple(normalizedAngle, saturation, value)
-                                onColorChanged(hsvToColor(normalizedAngle, saturation, value))
+                                hsv = Triple(normalizedAngle, hsv.second, hsv.third)
+                                onColorChanged(hsvToColor(normalizedAngle, hsv.second, hsv.third))
                             } else if (pos.x in squareTopLeft.x..(squareTopLeft.x + squareSize) &&
                                 pos.y in squareTopLeft.y..(squareTopLeft.y + squareSize)) {
                                 // SV square
-                                val s = ((pos.x - squareTopLeft.x) / squareSize).coerceIn(0f, 10f)
+                                val s = ((pos.x - squareTopLeft.x) / squareSize).coerceIn(0f, 1f)
                                 val v = (1f - (pos.y - squareTopLeft.y) / squareSize).coerceIn(0f, 1f)
-                                hsv = Triple(hue, s, v)
-                                onColorChanged(hsvToColor(hue, s, v))
+                                hsv = Triple(hsv.first, s, v)
+                                onColorChanged(hsvToColor(hsv.first, s, v))
                             }
                         }
                     }
@@ -75,14 +75,14 @@ fun HslColorPicker(
                             if (dist in (innerRadius - 10f)..(outerRadius + 10f)) {
                                 val angle = (atan2(pos.y - center.y, pos.x - center.x) * 180 / PI).toFloat()
                                 val normalizedAngle = (angle + 360) % 360
-                                hsv = Triple(normalizedAngle, saturation, value)
-                                onColorChanged(hsvToColor(normalizedAngle, saturation, value))
+                                hsv = Triple(normalizedAngle, hsv.second, hsv.third)
+                                onColorChanged(hsvToColor(normalizedAngle, hsv.second, hsv.third))
                             } else if (pos.x in squareTopLeft.x..(squareTopLeft.x + squareSize) &&
                                 pos.y in squareTopLeft.y..(squareTopLeft.y + squareSize)) {
                                 val s = ((pos.x - squareTopLeft.x) / squareSize).coerceIn(0f, 1f)
                                 val v = (1f - (pos.y - squareTopLeft.y) / squareSize).coerceIn(0f, 1f)
-                                hsv = Triple(hue, s, v)
-                                onColorChanged(hsvToColor(hue, s, v))
+                                hsv = Triple(hsv.first, s, v)
+                                onColorChanged(hsvToColor(hsv.first, s, v))
                             }
                         }
                     }

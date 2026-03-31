@@ -15,18 +15,23 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.input.pointer.*
 import androidx.compose.ui.semantics.*
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -38,8 +43,8 @@ import compose.icons.tablericons.*
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun SearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
+    query: TextFieldValue,
+    onQueryChange: (TextFieldValue) -> Unit,
     onSearch: (String) -> Unit,
     suggestions: List<ZerochanSuggestion>,
     onFocusChanged: (Boolean) -> Unit,
@@ -52,6 +57,7 @@ fun SearchBar(
 ) {
     var isFocused by remember { mutableStateOf(false) }
     var focusedIndex by remember { mutableIntStateOf(-1) }
+    val focusRequester = remember { FocusRequester() }
 
     // --- ENH 4: Focused Border ---
     val borderColor by animateColorAsState(
@@ -101,12 +107,12 @@ fun SearchBar(
                             }
                             Key.Enter -> {
                                 if (focusedIndex != -1 && suggestions.indices.contains(focusedIndex)) {
-                                    onQueryChange(suggestions[focusedIndex].value)
+                                    onQueryChange(TextFieldValue(suggestions[focusedIndex].value, selection = TextRange(suggestions[focusedIndex].value.length)))
                                     onSearch(suggestions[focusedIndex].value)
                                     focusedIndex = -1
                                     true
                                 } else {
-                                    onSearch(query)
+                                    onSearch(query.text)
                                     true
                                 }
                             }
@@ -127,35 +133,38 @@ fun SearchBar(
                         modifier = Modifier.size(20.dp),
                     )
 
-                    Box(
-                        modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-                        contentAlignment = Alignment.CenterStart,
-                    ) {
-                        if (query.isEmpty()) {
-                            Text(
-                                "Search tags...",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                style = MaterialTheme.typography.bodyLarge,
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 12.dp),
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
+                            if (query.text.isEmpty()) {
+                                Text(
+                                    "Search tags...",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                )
+                            }
+                            BasicTextField(
+                                value = query,
+                                onValueChange = onQueryChange,
+                                textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .focusRequester(focusRequester)
+                                    .semantics {
+                                        contentDescription = "Search input"
+                                    },
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                                keyboardActions = KeyboardActions(onSearch = { onSearch(query.text) }),
+                                singleLine = true,
                             )
                         }
-                        BasicTextField(
-                            value = query,
-                            onValueChange = onQueryChange,
-                            textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .semantics {
-                                    contentDescription = "Search input"
-                                },
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                            keyboardActions = KeyboardActions(onSearch = { onSearch(query) }),
-                            singleLine = true,
-                        )
-                    }
 
-                    if (query.isNotEmpty()) {
-                        IconButton(onClick = { onQueryChange("") }, modifier = Modifier.size(28.dp)) {
+                    if (query.text.isNotEmpty()) {
+                        IconButton(onClick = { onQueryChange(TextFieldValue("")) }, modifier = Modifier.size(28.dp)) {
                             Icon(TablerIcons.X, contentDescription = "Clear", modifier = Modifier.size(16.dp))
                         }
                     }
@@ -192,7 +201,7 @@ fun SearchBar(
                         )
                     } else {
                         AppTooltip(text = "Search") {
-                            IconButton(onClick = { onSearch(query) }, modifier = Modifier.size(32.dp)) {
+                            IconButton(onClick = { onSearch(query.text) }, modifier = Modifier.size(32.dp)) {
                                 Icon(TablerIcons.ChevronRight, contentDescription = "Search", tint = MaterialTheme.colorScheme.primary)
                             }
                         }
@@ -213,7 +222,7 @@ fun SearchBar(
                 }
 
                 AnimatedVisibility(
-                    visible = isFocused && (query.isNotEmpty() || suggestions.isNotEmpty()),
+                    visible = isFocused && (query.text.isNotEmpty() || suggestions.isNotEmpty()),
                     enter = expandVertically(spring(dampingRatio = 0.8f, stiffness = 300f)),
                     exit = shrinkVertically(spring(dampingRatio = 0.8f, stiffness = 300f)),
                 ) {
@@ -228,7 +237,7 @@ fun SearchBar(
                             if (suggestions.isEmpty()) {
                                 item { 
                                     SuggestionItem(
-                                        value = "No matching tags for \"$query\"",
+                                        value = "No matching tags for \"${query.text}\"",
                                         icon = TablerIcons.InfoCircle,
                                         isHighlighted = false,
                                         index = 0,
@@ -251,7 +260,7 @@ fun SearchBar(
                                         index = index,
                                         onClick = {
                                             // Trigger search immediately
-                                            onQueryChange(suggestion.value)
+                                            onQueryChange(TextFieldValue(suggestion.value, selection = TextRange(suggestion.value.length)))
                                             onSearch(suggestion.value)
                                         },
                                     )

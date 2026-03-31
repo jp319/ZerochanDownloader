@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -29,8 +31,8 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val logTAG = "GalleryViewModel"
 
-    private val _query = MutableStateFlow("")
-    val query: StateFlow<String> = _query.asStateFlow()
+    private val _query = MutableStateFlow(TextFieldValue(""))
+    val query: StateFlow<TextFieldValue> = _query.asStateFlow()
 
     private val _images = MutableStateFlow<List<ZerochanItem>>(emptyList())
     val images: StateFlow<List<ZerochanItem>> = _images.asStateFlow()
@@ -127,27 +129,27 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
 
     fun setSortOrder(sort: SortOrder?) {
         _sortOrder.value = sort
-        onSearch(_query.value)
+        onSearch(_query.value.text)
     }
 
     fun setTimeFilter(time: TimeFilter?) {
         _timeFilter.value = time
-        onSearch(_query.value)
+        onSearch(_query.value.text)
     }
 
     fun setDimensionFilter(dim: DimensionFilter?) {
         _dimensionFilter.value = dim
-        onSearch(_query.value)
+        onSearch(_query.value.text)
     }
 
     fun setColorFilter(color: String?) {
         _colorFilter.value = color
-        onSearch(_query.value)
+        onSearch(_query.value.text)
     }
 
     fun toggleStrictMode() {
         _strictMode.update { !it }
-        onSearch(_query.value)
+        onSearch(_query.value.text)
     }
 
     fun clearFilters() {
@@ -156,12 +158,12 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         _dimensionFilter.value = null
         _colorFilter.value = null
         _strictMode.value = false
-        onSearch(_query.value)
+        onSearch(_query.value.text)
     }
 
     private fun getCurrentApiParams(page: Int): ZerochanApiParams {
         return ZerochanApiParams(
-            tag = _query.value,
+            tag = _query.value.text,
             page = page,
             limit = 30,
             sort = _sortOrder.value,
@@ -329,11 +331,11 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
     }
 
     fun onRefresh() {
-        onSearch(_query.value)
+        onSearch(_query.value.text)
     }
 
     fun onLoadMore() {
-        val currentQuery = _query.value
+        val currentQuery = _query.value.text
         if (currentQuery.isBlank() || _isLoading.value || _isEndOfPaginationReached.value) return
 
         currentPage++
@@ -364,11 +366,11 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         }
     }
 
-    fun onQueryChange(value: String) {
+    fun onQueryChange(value: TextFieldValue) {
         _query.update { value }
         searchJob?.cancel()
 
-        if (value.isBlank()) {
+        if (value.text.isBlank()) {
             loadSearchHistory()
             return
         }
@@ -376,13 +378,13 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         searchJob =
             scope.launch {
                 delay(300.milliseconds)
-                val results = repository.getSuggestions(value)
+                val results = repository.getSuggestions(value.text)
                 _suggestions.update { results }
             }
     }
 
     fun onSearchFocusChanged(isFocused: Boolean) {
-        if (isFocused && _query.value.isBlank()) {
+        if (isFocused && _query.value.text.isBlank()) {
             loadSearchHistory()
         } else if (!isFocused) {
             // Delay clear to allow click events on suggestions to fire first
