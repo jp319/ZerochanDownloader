@@ -169,7 +169,12 @@ fun GalleryScreen(
         modifier =
             modifier
                 .fillMaxSize()
-                .onPointerEvent(PointerEventType.Press) { event ->
+                .onPointerEvent(PointerEventType.Press, pass = PointerEventPass.Initial) { event ->
+                    // Capture start position as early as possible (Initial pass) for selection logic
+                    dragStartPosition = event.changes.first().position
+                    
+                    // Clear focus only if the event wasn't consumed by children (Main pass handled later)
+                    // But we can trigger it here for the root background click
                     if (event.changes.any { !it.isConsumed }) {
                         focusManager.clearFocus()
                         viewModel.hideFilterPanel()
@@ -187,11 +192,6 @@ fun GalleryScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(top = gridPaddingTop)
-                    .onPointerEvent(PointerEventType.Press) {
-                        // Global click outside (ENH 5 & 7j)
-                        focusManager.clearFocus()
-                        viewModel.hideFilterPanel()
-                    }
                     .onPointerEvent(PointerEventType.Release) {
                         // Reset dragging state globally if needed
                         dragStartPosition = null
@@ -246,11 +246,13 @@ fun GalleryScreen(
                         modifier =
                             Modifier
                                 .fillMaxSize()
-                                .onPointerEvent(PointerEventType.Move) { event ->
+                                .onPointerEvent(PointerEventType.Move, pass = PointerEventPass.Initial) { event ->
                                     // Drag-to-select logic (Bug 5: Bounding Box)
                                     val isModeActive = isSelectionModeActive || selectedIds.isNotEmpty()
                                     if (isModeActive && event.buttons.isPrimaryPressed) {
                                         val currentPos = event.changes.first().position
+                                        
+                                        // Ensure start position exists (fallback if press was consumed by other components)
                                         if (dragStartPosition == null) {
                                             dragStartPosition = currentPos
                                         }
@@ -267,10 +269,10 @@ fun GalleryScreen(
                                         val hoveredIds = mutableSetOf<Int>()
                                         gridState.layoutInfo.visibleItemsInfo.forEach { item ->
                                             val itemRect = Rect(
-                                                left = item.offset.x.toFloat(),
-                                                top = item.offset.y.toFloat(),
-                                                right = (item.offset.x + item.size.width).toFloat(),
-                                                bottom = (item.offset.y + item.size.height).toFloat()
+                                                left = item.offset.x.toFloat() - 1f,
+                                                top = item.offset.y.toFloat() - 1f,
+                                                right = (item.offset.x + item.size.width).toFloat() + 1f,
+                                                bottom = (item.offset.y + item.size.height).toFloat() + 1f
                                             )
                                             if (rect.overlaps(itemRect)) {
                                                 (item.key as? Int)?.let { id ->
@@ -279,6 +281,9 @@ fun GalleryScreen(
                                             }
                                         }
                                         viewModel.updateDragSelectionWithSet(hoveredIds)
+                                        
+                                        // CONSUME: Forcefully block scrolling once selection is engaged
+                                        event.changes.forEach { it.consume() }
                                     }
                                 },
                     ) {
@@ -295,8 +300,12 @@ fun GalleryScreen(
                                         viewModel.onImageClick(item)
                                     }
                                 },
-                                onLongClick = { viewModel.toggleSelection(item.id) },
-                                onDragStart = { viewModel.startDragSelection(item.id) },
+                                onLongClick = {
+                                    viewModel.toggleSelection(item.id)
+                                },
+                                onDragStart = { isSelect: Boolean? ->
+                                    viewModel.startDragSelection(item.id, isSelect)
+                                },
                             )
                         }
 

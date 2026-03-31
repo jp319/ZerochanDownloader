@@ -189,10 +189,10 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
         }
     }
 
-    fun startDragSelection(id: Int) {
+    fun startDragSelection(id: Int, isSelect: Boolean? = null) {
         isDragging = true
         preExistingSelection = _selectedIdsForDownload.value
-        dragInitialStateIsSelect = !preExistingSelection.contains(id)
+        dragInitialStateIsSelect = isSelect ?: !preExistingSelection.contains(id)
     }
 
     fun updateDragSelectionWithSet(idsUnderDrag: Set<Int>) {

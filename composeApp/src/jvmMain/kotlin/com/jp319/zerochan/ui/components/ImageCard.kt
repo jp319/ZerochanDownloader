@@ -40,7 +40,7 @@ fun ImageCard(
     isSelectionModeActive: Boolean,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
-    onDragStart: () -> Unit,
+    onDragStart: (Boolean?) -> Unit,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isHovered by interactionSource.collectIsHoveredAsState()
@@ -81,13 +81,16 @@ fun ImageCard(
             }
             .scale(cardScale)
             .onPointerEvent(PointerEventType.Press) {
-                if (isSelectionModeActive) onDragStart()
+                if (isSelectionModeActive) onDragStart(null)
             }
             .combinedClickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick,
-                onLongClick = onLongClick,
+                onLongClick = { 
+                    onLongClick()
+                    onDragStart(!isSelected)
+                },
             ),
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
