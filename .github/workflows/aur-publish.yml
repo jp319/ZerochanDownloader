@@ -30,7 +30,8 @@ jobs:
         run: |
           # Use input version if called via workflow_call, otherwise extract from tag
           if [ -n "${{ inputs.version }}" ]; then
-            VERSION="${{ inputs.version }}"
+            INPUT_VER="${{ inputs.version }}"
+            VERSION="${INPUT_VER#v}" # Strips the 'v' if it exists
           else
             VERSION=${GITHUB_REF_NAME#v}
           fi
