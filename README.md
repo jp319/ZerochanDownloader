@@ -45,13 +45,13 @@ This application is built entirely on top of the [Zerochan public API](https://w
 
 Download the latest installer for your platform from the [**Releases page**](https://github.com/jp319/ZerochanDownloader/releases).
 
-| Platform                   | Installer                                 |
-|----------------------------|-------------------------------------------|
-| Windows                    | `.exe` (standalone) or `.msi` (installer) |
-| Linux (Debian/Ubuntu/Mint) | `.deb`                                    |
-| Linux (Arch/Manjaro)       | [AUR Package](#-for-arch-linux-users-aur) |
-| Linux (Fedora/openSUSE)    | `.rpm`                                    |
-| macOS                      | `.dmg`                                    |
+| Platform                   | Installer                                                                 |
+|----------------------------|---------------------------------------------------------------------------|
+| Windows                    | `.exe` (standalone) or `.msi` (installer)                                 |
+| Linux (Debian/Ubuntu/Mint) | `.deb`                                                                    |
+| Linux (Arch/Manjaro)       | [AUR Package](https://aur.archlinux.org/packages/zerochan-downloader-bin) |
+| Linux (Fedora/openSUSE)    | `.rpm`                                                                    |
+| macOS                      | `.dmg`                                                                    |
 
 > **Note:** No Java installation is required. All installers bundle their own JVM runtime.
 
@@ -99,7 +99,7 @@ Requires **JDK 17+** (tested on OpenJDK 24).
 
 ```bash
 # Clone the repository
-git clone [https://github.com/jp319/ZerochanDownloader.git](https://github.com/jp319/ZerochanDownloader.git)
+git clone https://github.com/jp319/ZerochanDownloader.git
 cd ZerochanDownloader
 
 # Run the development build
@@ -117,11 +117,12 @@ cd ZerochanDownloader
 ### Building platform installers
 
 ```bash
-./gradlew :composeApp:packageReleaseDeb   # Debian/Ubuntu .deb
-./gradlew :composeApp:packageReleaseRpm   # Fedora/openSUSE .rpm
-./gradlew :composeApp:packageReleaseMsi   # Windows .msi
-./gradlew :composeApp:packageReleaseExe   # Windows standalone .exe
-./gradlew :composeApp:packageReleaseDmg   # macOS .dmg
+./gradlew :composeApp:packageReleaseDeb           # Debian/Ubuntu .deb
+./gradlew :composeApp:packageReleaseRpm           # Fedora/openSUSE .rpm
+./gradlew :composeApp:packageReleaseMsi           # Windows .msi
+./gradlew :composeApp:packageReleaseExe           # Windows standalone .exe
+./gradlew :composeApp:packageReleaseDmg           # macOS .dmg
+./gradlew :composeApp:createReleaseDistributable  # Binary without installer
 ```
 
 -----

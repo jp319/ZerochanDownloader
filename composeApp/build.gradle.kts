@@ -16,7 +16,7 @@ ktlint {
     }
 }
 
-val packageVersionLatest = (project.findProperty("appVersion") as? String) ?: "1.0.2"
+val packageVersionLatest = (project.findProperty("appVersion") as? String) ?: "1.0.0"
 
 // Task to generate BuildConfig file
 val generateBuildConfig =

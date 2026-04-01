@@ -1,9 +1,6 @@
 name: Publish to AUR
 
-# Only run this when a release is actually published or called as a reusable workflow
 on:
-  release:
-    types: [published]
   workflow_call:
     inputs:
       version:
@@ -13,120 +10,71 @@ on:
       AUR_SSH_PRIVATE_KEY:
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   update-aur:
     runs-on: ubuntu-latest
-    # We run inside an Arch Linux container so we have access to makepkg
-    container: archlinux:base-devel
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: pacman -Sy --noconfirm --needed git openssh sudo curl github-cli
+        uses: actions/checkout@v5
 
       - name: Extract Version
-        id: get_version
         run: |
-          # Use input version if called via workflow_call, otherwise extract from tag
-          if [ -n "${{ inputs.version }}" ]; then
-            INPUT_VER="${{ inputs.version }}"
-            VERSION="${INPUT_VER#v}"
-          else
-            VERSION=${GITHUB_REF_NAME#v}
-          fi
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          # workflow_call requires version input; support both "v1.2.3" and "1.2.3".
+          INPUT_VER="${{ inputs.version }}"
+          VERSION="${INPUT_VER#v}"
+
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "Version is $VERSION"
 
-      - name: Calculate SHA256 of the new .deb file
+      - name: Download release .deb and calculate SHA256
         env:
-          GH_TOKEN: ${{ github.token }} # Required to authenticate the gh cli
+          GH_TOKEN: ${{ github.token }}
         run: |
-          TAG_NAME=${{ github.ref_name }}
-          if [ -z "$TAG_NAME" ] || [ "$TAG_NAME" == "null" ]; then
-             TAG_NAME="v$VERSION"
-          fi
-          
+          TAG_NAME="v$VERSION"
+
           echo "Downloading .deb file for release: $TAG_NAME"
-          
-          # Safely download ANY .deb file attached to this release using gh cli
           gh release download "$TAG_NAME" --repo "${{ github.repository }}" --pattern "*.deb"
-          
-          # Grab the actual filename of the downloaded file
-          DEB_FILE=$(ls *.deb | head -n 1)
-          
+
+          DEB_FILE=$(ls -1 *.deb | head -n 1)
           if [ -z "$DEB_FILE" ]; then
-            echo "Error: Could not find the downloaded .deb file. Check if the build-linux job successfully uploaded it."
+            echo "Error: Could not find the downloaded .deb file."
             exit 1
           fi
-          
-          echo "Successfully downloaded: $DEB_FILE"
-          
-          # Calculate the hash dynamically based on the actual filename
+
           SHA256=$(sha256sum "$DEB_FILE" | awk '{print $1}')
-          echo "SHA256=$SHA256" >> $GITHUB_ENV
+          echo "SHA256=$SHA256" >> "$GITHUB_ENV"
+
+          echo "Using release asset: $DEB_FILE"
           echo "Calculated SHA256: $SHA256"
 
-      - name: Setup SSH for AUR
+      - name: Prepare generated PKGBUILD
         run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          
-          # Immediate safeguard: Fail cleanly if the secret is missing or empty
-          if [ -z "${{ secrets.AUR_SSH_PRIVATE_KEY }}" ]; then
-            echo "ERROR: AUR_SSH_PRIVATE_KEY is empty or not accessible by this workflow!"
+          if [ ! -f aur/PKGBUILD ]; then
+            echo "Error: Missing aur/PKGBUILD template in repository."
             exit 1
           fi
-          
-          # Write the secret
-          echo "${{ secrets.AUR_SSH_PRIVATE_KEY }}" > ~/.ssh/aur
-          chmod 600 ~/.ssh/aur
-          
-          # Hardcode the official AUR Ed25519 fingerprint (100% immune to keyscan failures)
-          echo "aur.archlinux.org ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIE14BGe12bB/pGv11E0XFhC7ZEDvR2bTInA71U9J45xT" >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-          
-          # Configure Git to use the SSH key
-          cat <<EOF > ~/.ssh/config
-          Host aur.archlinux.org
-            IdentityFile ~/.ssh/aur
-            User aur
-          EOF
-          chmod 600 ~/.ssh/config
 
-      - name: Clone AUR Repository
-        run: git clone ssh://aur@aur.archlinux.org/zerochan-downloader-bin.git aur-repo
+          cp aur/PKGBUILD PKGBUILD
+          sed -i "s/VERSION_PLACEHOLDER/${VERSION}/g" PKGBUILD
+          sed -i "s/SHA256_PLACEHOLDER/${SHA256}/g" PKGBUILD
 
-      - name: Update PKGBUILD & Generate .SRCINFO
-        run: |
-          # Copy our template into the AUR repo
-          cp aur/PKGBUILD aur-repo/PKGBUILD
-          
-          cd aur-repo
-          
-          # Inject the new version and hash into the PKGBUILD
-          sed -i "s/VERSION_PLACEHOLDER/${{ env.VERSION }}/g" PKGBUILD
-          sed -i "s/SHA256_PLACEHOLDER/${{ env.SHA256 }}/g" PKGBUILD
-          
-          # makepkg refuses to run as root for security reasons.
-          # We change ownership to 'nobody' and run it as that user.
-          chown -R nobody:nobody .
-          sudo -u nobody makepkg --printsrcinfo > .SRCINFO
-
-      - name: Commit and Push to AUR
-        run: |
-          cd aur-repo
-          
-          # Setup Git user identity
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          git add PKGBUILD .SRCINFO
-          
-          # Only commit and push if there are actual changes
-          if ! git diff --cached --quiet; then
-            git commit -m "Automated update to v${{ env.VERSION }}"
-            git push
-          else
-            echo "No changes to commit."
+          # Ensure placeholders are fully replaced before publishing.
+          if grep -q "VERSION_PLACEHOLDER\|SHA256_PLACEHOLDER" PKGBUILD; then
+            echo "Error: PKGBUILD placeholders were not replaced."
+            exit 1
           fi
+
+      - name: Publish to AUR
+        uses: KSXGitHub/github-actions-deploy-aur@v4.1.1
+        with:
+          pkgname: zerochan-downloader-bin
+          pkgbuild: ./PKGBUILD
+          commit_username: github-actions[bot]
+          commit_email: github-actions[bot]@users.noreply.github.com
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: Automated update to v${{ env.VERSION }}
+          allow_empty_commits: "false"
+          ssh_keyscan_types: rsa,ecdsa,ed25519

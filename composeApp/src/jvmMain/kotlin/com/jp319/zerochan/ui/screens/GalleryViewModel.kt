@@ -156,7 +156,7 @@ class GalleryViewModel(private val repository: ZerochanRepository) {
                     _updateInfo.value =
                         UpdateInfo(
                             latestVersion = release.tagName,
-                            releaseNotes = release.body,
+                            releaseNotes = release.body ?: "No release notes provided.",
                             releaseUrl = release.htmlUrl,
                             installerUrl = bestAsset?.browserDownloadUrl,
                             installerName = bestAsset?.name,

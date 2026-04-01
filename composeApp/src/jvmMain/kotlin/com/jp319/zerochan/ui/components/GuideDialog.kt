@@ -6,7 +6,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,14 +48,14 @@ fun GuideDialog(
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                 )
-                TabRow(
+                SecondaryTabRow(
                     selectedTabIndex = selectedTabIndex,
                     containerColor = Color.Transparent,
                     contentColor = MaterialTheme.colorScheme.primary,
                     divider = {},
-                    indicator = { tabPositions ->
+                    indicator = {
                         TabRowDefaults.SecondaryIndicator(
-                            Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                            modifier = Modifier.tabIndicatorOffset(selectedTabIndex),
                             color = MaterialTheme.colorScheme.primary,
                         )
                     },
